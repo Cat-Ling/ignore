@@ -34,10 +34,12 @@ jobs:
         cd videos
         yt-dlp -o "input_video.%(ext)s" $VIDEO_LINK
       
-    - name: Convert Video at Max Priority
+    - name: Convert Video Utilizing Available RAM
       run: |
         cd videos
-        nice -n -20 ionice -c1 ffmpeg -i input_video.* -c:v libx264 -crf 0 -c:a copy output_video.mkv
+        total_memory_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+        max_memory_mb=$((total_memory_kb / 1024))
+        ffmpeg -i input_video.* -c:v libx264 -crf 0 -c:a copy -preset ultrafast -threads 0 -bufsize ${max_memory_mb}M output_video.mkv
 
     - name: Upload to Artifacts
       uses: actions/upload-artifact@v4
