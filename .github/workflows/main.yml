@@ -1,35 +1,24 @@
-name: SSH Server Workflow
+- name: Set up SSH server and user
+  run: |
+    # Create user "admin" with password "abcd1234" and grant sudo privileges
+    sudo useradd -m -s /bin/bash admin
+    echo 'admin:abcd1234' | sudo chpasswd
+    sudo usermod -aG sudo admin
 
-on:
-  push:
-    branches:
-      - main
+    # Install OpenSSH server
+    sudo apt update
+    sudo apt install -y openssh-server
 
-jobs:
-  ssh-server:
-    runs-on: ubuntu-latest
+    # Allow password authentication in SSH
+    sudo sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
 
-    steps:
-    - name: Set up SSH server and user
-      run: |
-        # Create user "admin" with password "abcd1234" and grant sudo privileges
-        sudo useradd -m -p $(openssl passwd -crypt abcd1234) -s /bin/bash admin
-        sudo usermod -aG sudo admin
+    # Restart SSH server
+    sudo service ssh restart
 
-        # Install OpenSSH server
-        sudo apt update
-        sudo apt install -y openssh-server
+    # Get the public IP address
+    public_ip=$(curl -s https://api64.ipify.org?format=json | jq -r .ip)
 
-        # Allow password authentication in SSH
-        sudo sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
-
-        # Restart SSH server
-        sudo service ssh restart
-
-        # Get the public IP address
-        public_ip=$(curl -s https://api64.ipify.org?format=json | jq -r .ip)
-
-        echo "SSH Server is running at:"
-        echo "Username: admin"
-        echo "Password: abcd1234"
-        echo "Connect using: ssh admin@$public_ip"
+    echo "SSH Server is running at:"
+    echo "Username: admin"
+    echo "Password: abcd1234"
+    echo "Connect using: ssh admin@$public_ip"
