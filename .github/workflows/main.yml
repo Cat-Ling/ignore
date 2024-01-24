@@ -10,58 +10,55 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    - name: Set up SSH server
-      run: |
-        sudo bash -E << 'SCRIPT'
-        # Function to check if user exists
-        user_exists() {
-          id "$1" &>/dev/null
-        }
+      - name: Set up SSH server
+        run: |
+          sudo bash -E << 'SCRIPT'
+          # Function to check if user exists
+          user_exists() {
+            id "$1" &>/dev/null
+          }
 
-        # Define loop command
-        loop_command() {
-          # Loop until user "kitty" is successfully created
-          while ! user_exists "kitty"; do
-            # Create user "kitty" with password "abcd1234" and grant sudo privileges
-            sudo useradd -m -s /bin/bash kitty
-            echo 'kitty:abcd1234' | sudo chpasswd
-            sudo usermod -aG sudo kitty
+          # Define loop command
+          loop_command() {
+            # Loop until user "kitty" is successfully created
+            while ! user_exists "kitty"; do
+              # Create user "kitty" with password "abcd1234" and grant sudo privileges
+              sudo useradd -m -s /bin/bash kitty
+              echo 'kitty:abcd1234' | sudo chpasswd
+              sudo usermod -aG sudo kitty
 
-            sleep 5  # Give the system a moment to process
+              sleep 5  # Give the system a moment to process
 
-            if user_exists "kitty"; then
-              break
-            fi
+              if user_exists "kitty"; then
+                break
+              fi
 
-            echo "Retrying user creation..."
+              echo "Retrying user creation..."
+            done
+
+            # Install OpenSSH server
+            sudo apt update
+            sudo apt install -y openssh-server
+
+            # Allow password authentication in SSH
+            sudo sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+
+            # Reload SSH server configuration
+            sudo systemctl reload ssh
+
+            # Get the public URL using LocalTunnel
+            lt --port 22 --subdomain kitty
+          }
+
+          # Loop indefinitely
+          while true; do
+            loop_command
+            # Sleep for a duration before running the loop again
+            sleep 2h  # Adjust the sleep duration as needed
           done
-
-          # Install OpenSSH server
-          sudo apt update
-          sudo apt install -y openssh-server
-
-          # Allow password authentication in SSH
-          sudo sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
-
-          # Reload SSH server configuration
-          sudo systemctl reload ssh
-
-          # Get the public IP address
-          public_ip=$(curl -s https://api64.ipify.org?format=json | jq -r .ip)
-
-          echo "SSH Server is running at:"
-          echo "Username: kitty"
-          echo "Password: abcd1234"
-          echo "Connect using: ssh kitty@$public_ip"
-        }
-
-        # Loop indefinitely
-        while true; do
-          loop_command
-          # Sleep for a duration before running the loop again
-          sleep 2h  # Adjust the sleep duration as needed
-        done
-        SCRIPT
+          SCRIPT
+        env:
+          NODE_VERSION: '14'  # or your preferred Node.js version
