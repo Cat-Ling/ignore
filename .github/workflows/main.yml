@@ -15,8 +15,7 @@ jobs:
           - first-machine
 
     env:
-      VIDEO_LINK: "https://s5.trafficdeposit.com/widi/321e5j7hz13b81zd1u3m7szw1s7o8/LlU-lze8EpmX0b9VeS2Uvg/1706111405/618afb5ec39a8/649dda66e252b.vid"  # Replace with your desired video link
-#marie luumacarie bbc
+      VIDEO_LINK: "https://www.xvideos.com/video63292631/the_thief_of_hearts_1_-_the_story_of_a_french_thief"  # Replace with your desired video link
     steps:
       - name: Display System Information
         run: |
