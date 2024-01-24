@@ -1,4 +1,4 @@
-name: Run app.py
+name: Video Processing Workflow
 
 on:
   push:
@@ -6,40 +6,39 @@ on:
       - main
 
 jobs:
-  run-app:
+  process_video:
     runs-on: ubuntu-latest
 
+    env:
+      VIDEO_LINK: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"  # Replace with your desired video link
+
     steps:
-    - name: Create directory and clone repository
-      run: |
-        mkdir -p CodeFormer
-        git lfs install
-        git lfs clone https://huggingface.co/spaces/sczhou/CodeFormer CodeFormer
+    - name: Checkout Repository
+      uses: actions/checkout@v2
 
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v2
+    - name: Create Directories
+      run: |
+        mkdir -p videos
+        mkdir -p artifacts
+
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg
+        pip install --upgrade yt-dlp
+
+    - name: Download Video
+      run: |
+        cd videos
+        yt-dlp -o "input_video.%(ext)s" $VIDEO_LINK
+      
+    - name: Convert Video
+      run: |
+        cd videos
+        ffmpeg -i input_video.* -c:v libx264 -crf 0 -c:a copy output_video.mkv
+
+    - name: Upload to Artifacts
+      uses: actions/upload-artifact@v4
       with:
-        python-version: 3.8
-
-    - name: Find CodeFormer directory
-      id: find-directory
-      run: |
-        directory=$(find / -name "requirements.txt" -exec dirname {} \; | head -n 1)
-        echo "CodeFormer directory found at: $directory"
-        echo "::set-output name=directory::$directory"
-
-    - name: Set working directory
-      run: cd ${{ steps.find-directory.outputs.directory }}
-
-    - name: Verify contents of CodeFormer directory
-      run: ls -la
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Run app.py
-      run: |
-        chmod +x app.py
-        ./app.py
+        name: processed-video
+        path: videos/output_video.mkv
