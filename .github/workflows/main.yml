@@ -13,8 +13,11 @@ jobs:
       VIDEO_LINK: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"  # Replace with your desired video link
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2
+    - name: Display System Information
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y neofetch
+        neofetch
 
     - name: Create Directories
       run: |
@@ -23,7 +26,6 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        sudo apt-get update
         sudo apt-get install -y ffmpeg
         pip install --upgrade yt-dlp
 
@@ -32,10 +34,10 @@ jobs:
         cd videos
         yt-dlp -o "input_video.%(ext)s" $VIDEO_LINK
       
-    - name: Convert Video
+    - name: Convert Video at Max Priority
       run: |
         cd videos
-        ffmpeg -i input_video.* -c:v libx264 -crf 0 -c:a copy output_video.mkv
+        nice -n -20 ionice -c1 ffmpeg -i input_video.* -c:v libx264 -crf 0 -c:a copy output_video.mkv
 
     - name: Upload to Artifacts
       uses: actions/upload-artifact@v4
