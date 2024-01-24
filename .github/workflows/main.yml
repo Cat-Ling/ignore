@@ -1,3 +1,5 @@
+name: Video Processing Workflow
+
 on:
   push:
     branches:
@@ -5,47 +7,37 @@ on:
 
 jobs:
   process_video:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     env:
-      VIDEO_LINK: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-      QUALITY: "1080p"
-      FORMAT_OPTIONS: "--merge-output-format mp4"
+      VIDEO_LINK: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"  # Replace with your desired video link
 
     steps:
-    - name: Display System Information and Install Dependencies
+    - name: Display System Information
       run: |
-        sudo apt-get update && sudo apt-get install -y neofetch ffmpeg
-        pip install --upgrade yt-dlp
+        sudo apt-get update
+        sudo apt-get install -y neofetch
         neofetch
-
     - name: Create Directories
-      run: mkdir -p videos artifacts
-
-    - name: Download Video and Convert with H.264 Compression
+      run: |
+        mkdir -p videos
+        mkdir -p artifacts
+    - name: Install Dependencies
+      run: |
+        sudo apt-get install -y ffmpeg
+        pip install --upgrade yt-dlp
+    - name: Download Video
       run: |
         cd videos
-        # Available yt-dlp quality options:
-        # - best, worst
-        # - bestvideo, bestaudio, worstvideo, worstaudio
-        # - bestvideo[height<=1080], bestaudio/best[height<=1080]
-        INFO=$(yt-dlp --get-title --get-id -o "%(title)s.%(ext)s" $VIDEO_LINK)
-        
-        # Sanitize the title to replace special characters with underscores
-        SANITIZED_TITLE=$(echo "$INFO" | tr -cd '[:alnum:]._-' | tr ' ' '_')
-
-        # Download video and audio separately
-        yt-dlp --format "bestvideo[height<=$QUALITY]" $FORMAT_OPTIONS -o "input_video_video.%(ext)s" $VIDEO_LINK
-        yt-dlp --format "bestaudio/best[height<=$QUALITY]" $FORMAT_OPTIONS -o "input_video_audio.%(ext)s" $VIDEO_LINK
-
-        # Wait for yt-dlp to finish merging before starting ffmpeg
-        wait $(jobs -p)
-
-        # Merge video and audio streams
-        ffmpeg -i "input_video_video.mp4" -i "input_video_audio.mp4" -c:v copy -c:a copy "$SANITIZED_TITLE"
-
+        yt-dlp -o "input_video.%(ext)s" $VIDEO_LINK
+      
+    - name: Convert Video with H.264 Compression
+      run: |
+        cd videos
+        VIDEO_TITLE=$(yt-dlp --get-title "$VIDEO_LINK" | sed 's/[^a-zA-Z0-9]/_/g')
+        ffmpeg -i input_video.* -c:v libx264 -crf 28 -preset ultrafast -max_muxing_queue_size 1024 -c:a aac -strict experimental "${VIDEO_TITLE}.mp4"
     - name: Upload to Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: processed-video
-        path: videos/"$SANITIZED_TITLE"
+        path: videos/*.mp4
