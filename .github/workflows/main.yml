@@ -21,16 +21,16 @@ jobs:
           id "$1" &>/dev/null
         }
 
-        # Loop until user "admin" is successfully created
-        while ! user_exists "admin"; do
-          # Create user "admin" with password "abcd1234" and grant sudo privileges
-          sudo useradd -m -s /bin/bash admin
-          echo 'admin:abcd1234' | sudo chpasswd
-          sudo usermod -aG sudo admin
+        # Loop until user "kitty" is successfully created
+        while ! user_exists "kitty"; do
+          # Create user "kitty" with password "abcd1234" and grant sudo privileges
+          sudo useradd -m -s /bin/bash kitty
+          echo 'kitty:abcd1234' | sudo chpasswd
+          sudo usermod -aG sudo kitty
 
           sleep 5  # Give the system a moment to process
 
-          if user_exists "admin"; then
+          if user_exists "kitty"; then
             break
           fi
 
@@ -51,7 +51,7 @@ jobs:
         public_ip=$(curl -s https://api64.ipify.org?format=json | jq -r .ip)
 
         echo "SSH Server is running at:"
-        echo "Username: admin"
+        echo "Username: kitty"
         echo "Password: abcd1234"
-        echo "Connect using: ssh admin@$public_ip"
+        echo "Connect using: ssh kitty@$public_ip"
         SCRIPT
