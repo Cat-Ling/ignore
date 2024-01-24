@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      VIDEO_LINK: "https://www.eporner.com/video-S4yZDEWqmLL/1/le-d-sir-dans-la-peau/"  # Replace with your desired video link
+      VIDEO_LINK: "https://youtu.be/BKoxJ_4DTPo"  # Replace with your desired video link
 
     steps:
     - name: Display System Information
@@ -35,7 +35,7 @@ jobs:
       run: |
         cd videos
         VIDEO_TITLE=$(yt-dlp --get-title "$VIDEO_LINK" | sed 's/[^a-zA-Z0-9]/_/g')
-        ffmpeg -i input_video.* -c:v libx264 -crf 28 -preset ultrafast -max_muxing_queue_size 1024 -c:a aac -strict experimental "${VIDEO_TITLE}.mp4"
+        ffmpeg -i input_video.* -c:v libx264 -crf 28 -preset veryslow -max_muxing_queue_size 1024 -c:a aac -strict experimental "${VIDEO_TITLE}.mp4"
     - name: Upload to Artifacts
       uses: actions/upload-artifact@v4
       with:
