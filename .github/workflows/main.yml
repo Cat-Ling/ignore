@@ -44,7 +44,7 @@ jobs:
       with:
         path: |
           ~/.cache/neofetch
-        key: neofetch-${{ hash(steps.neofetch.outputs) }}
+        key: neofetch-${{ runner.os }}-${{ hash(neofetch.outputs) }}
 
     - name: Download Video
       run: |
