@@ -1,5 +1,3 @@
-name: Video Processing Workflow
-
 on:
   push:
     branches:
@@ -10,7 +8,9 @@ jobs:
     runs-on: ubuntu-20.04
 
     env:
-      VIDEO_LINK: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+      VIDEO_LINK: "https://www.youtube.com/watch?v=S2dRcipMCpw&pp=ygURYmlsbGllIGVpbGlzaCBob3Q%3D"
+      QUALITY: "1080p"  # Adjust the desired quality, e.g., "720p", "480p", or use format codes like "best", "worst"
+      FORMAT_OPTIONS: "--merge-output-format mp4"
 
     steps:
     - name: Display System Information and Install Dependencies
@@ -25,11 +25,16 @@ jobs:
     - name: Download Video and Convert with H.264 Compression
       run: |
         cd videos
-        yt-dlp -o "input_video.%(ext)s" $VIDEO_LINK
+        # Available yt-dlp quality options:
+        # - best, worst
+        # - bestvideo, bestaudio, worstvideo, worstaudio
+        # - bestvideo[height<=1080], bestaudio/best[height<=1080]
+        yt-dlp --format "bestvideo[height<=$QUALITY]+bestaudio/best[height<=$QUALITY]" $FORMAT_OPTIONS -o "input_video.%(ext)s" $VIDEO_LINK
         ffmpeg -i input_video.* -c:v libx264 -crf 28 -preset ultrafast -max_muxing_queue_size 1024 -c:a copy output_video.mkv
 
     - name: Upload to Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: processed-video
+        compression-level: 9 # maximum compression
         path: videos/output_video.mkv
