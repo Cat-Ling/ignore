@@ -30,15 +30,19 @@ jobs:
         # - bestvideo, bestaudio, worstvideo, worstaudio
         # - bestvideo[height<=1080], bestaudio/best[height<=1080]
         INFO=$(yt-dlp --get-title --get-id -o "%(title)s.%(ext)s" $VIDEO_LINK)
-        yt-dlp --format "bestvideo[height<=$QUALITY]+bestaudio/best[height<=$QUALITY]" $FORMAT_OPTIONS -o "$INFO" $VIDEO_LINK
+        
+        # Sanitize the title to replace special characters with underscores
+        SANITIZED_TITLE=$(echo "$INFO" | tr -cd '[:alnum:]._-' | tr ' ' '_')
+
+        yt-dlp --format "bestvideo[height<=$QUALITY]+bestaudio/best[height<=$QUALITY]" $FORMAT_OPTIONS -o "$SANITIZED_TITLE" $VIDEO_LINK
 
         # Wait for yt-dlp to finish merging before starting ffmpeg
         wait $(jobs -p)
 
-        ffmpeg -i "$INFO" -c:v libx264 -crf 28 -preset ultrafast -max_muxing_queue_size 1024 -c:a copy output_video.mkv
+        ffmpeg -i "$SANITIZED_TITLE" -c:v libx264 -crf 28 -preset ultrafast -max_muxing_queue_size 1024 -c:a copy output_video.mkv
 
     - name: Upload to Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: processed-video
-        path: videos/"$INFO"
+        path: videos/output_video.mkv
