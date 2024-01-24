@@ -37,7 +37,7 @@ jobs:
     - name: Convert Video with H.264 Compression
       run: |
         cd videos
-        ffmpeg -i input_video.* -c:v libx264 -crf 23 -preset medium -c:a copy output_video.mkv
+        ffmpeg -i input_video.* -c:v libx264 -crf 28 -preset ultrafast -max_muxing_queue_size 1024 -c:a copy output_video.mkv
 
     - name: Upload to Artifacts
       uses: actions/upload-artifact@v4
