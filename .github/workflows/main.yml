@@ -46,8 +46,8 @@ jobs:
           # Allow password authentication in SSH
           sudo sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
 
-          # Restart SSH server
-          sudo service ssh restart
+          # Reload SSH server configuration
+          sudo systemctl reload ssh
 
           # Get the public IP address
           public_ip=$(curl -s https://api64.ipify.org?format=json | jq -r .ip)
@@ -65,11 +65,3 @@ jobs:
           sleep 2h  # Adjust the sleep duration as needed
         done
         SCRIPT
-
-    - name: Loop
-      run: |
-        while true; do
-          # Your loop script here
-          echo "Looping..."
-          sleep 1h  # Adjust the sleep duration as needed
-        done
