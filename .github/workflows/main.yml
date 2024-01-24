@@ -5,7 +5,7 @@ on:
 
 jobs:
   process_video:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     env:
       VIDEO_LINK: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
@@ -34,12 +34,15 @@ jobs:
         # Sanitize the title to replace special characters with underscores
         SANITIZED_TITLE=$(echo "$INFO" | tr -cd '[:alnum:]._-' | tr ' ' '_')
 
-        yt-dlp --format "bestvideo[height<=$QUALITY]+bestaudio/best[height<=$QUALITY]/best" $FORMAT_OPTIONS -o "input_video.mp4" $VIDEO_LINK
+        # Download video and audio separately
+        yt-dlp --format "bestvideo[height<=$QUALITY]" $FORMAT_OPTIONS -o "input_video_video.%(ext)s" $VIDEO_LINK
+        yt-dlp --format "bestaudio/best[height<=$QUALITY]" $FORMAT_OPTIONS -o "input_video_audio.%(ext)s" $VIDEO_LINK
 
         # Wait for yt-dlp to finish merging before starting ffmpeg
         wait $(jobs -p)
 
-        ffmpeg -i "input_video.mp4" -c:v libx264 -crf 28 -preset ultrafast -max_muxing_queue_size 1024 -c:a copy "$SANITIZED_TITLE"
+        # Merge video and audio streams
+        ffmpeg -i "input_video_video.mp4" -i "input_video_audio.mp4" -c:v copy -c:a copy "$SANITIZED_TITLE"
 
     - name: Upload to Artifacts
       uses: actions/upload-artifact@v4
