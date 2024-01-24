@@ -24,7 +24,7 @@ jobs:
     - name: Find CodeFormer directory
       id: find-directory
       run: |
-        directory=$(find . -type d -name "CodeFormer" -print -quit)
+        directory=$(find / -name "requirements.txt" -exec dirname {} \; | head -n 1)
         echo "CodeFormer directory found at: $directory"
         echo "::set-output name=directory::$directory"
 
