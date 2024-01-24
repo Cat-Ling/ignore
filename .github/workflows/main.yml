@@ -40,4 +40,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: processed-video
+        compression-level: 9
         path: videos/*.mp4
