@@ -1,4 +1,4 @@
-- name: Set up SSH server and user
+ name: Set up SSH server and user
   run: |
     # Create user "admin" with password "abcd1234" and grant sudo privileges
     sudo useradd -m -s /bin/bash admin
