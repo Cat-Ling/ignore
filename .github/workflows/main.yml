@@ -22,13 +22,13 @@ jobs:
         # Install VNC Server
         choco install -y tightvnc
 
-        # Start VNC Server
-        Start-Process "C:\Program Files\TightVNC\tvnserver.exe" -NoNewWindow
+        # Start VNC Server with dynamically fetched public IP
+        $publicIpAddress = Invoke-RestMethod -Uri https://api64.ipify.org?format=json | Select -ExpandProperty ip
+        Start-Process "C:\Program Files\TightVNC\tvnserver.exe" -ArgumentList "-interface $publicIpAddress" -NoNewWindow
         Start-Sleep -Seconds 5  # Allow time for the server to start
 
-        # Get IP address and port
-        $ipAddress = (Test-NetConnection -ComputerName localhost -Port 5900).RemoteAddress
-        Write-Output "VNC Server is running at $ipAddress:5900"
+        # Get updated IP address and port
+        Write-Output "VNC Server is running at $publicIpAddress:5900"
 
     - name: Sleep and repeat
       run: |
@@ -38,9 +38,9 @@ jobs:
           
           # Restart VNC Server
           Stop-Process -Name "tvnserver" -Force
-          Start-Process "C:\Program Files\TightVNC\tvnserver.exe" -NoNewWindow
+          $publicIpAddress = Invoke-RestMethod -Uri https://api64.ipify.org?format=json | Select -ExpandProperty ip
+          Start-Process "C:\Program Files\TightVNC\tvnserver.exe" -ArgumentList "-interface $publicIpAddress" -NoNewWindow
           
           # Get updated IP address and port
-          $ipAddress = (Test-NetConnection -ComputerName localhost -Port 5900).RemoteAddress
-          Write-Output "VNC Server is running at $ipAddress:5900"
+          Write-Output "VNC Server is running at $publicIpAddress:5900"
         }
