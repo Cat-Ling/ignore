@@ -13,39 +13,19 @@ jobs:
       VIDEO_LINK: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"  # Replace with your desired video link
 
     steps:
-    - name: Cache Installations
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.cache/yt-dlp
-          ~/.cache/neofetch
-          /usr/bin/ffmpeg
-        key: installations-${{ runner.os }}-${{ hashFiles('**/*.yaml') }}
-
     - name: Display System Information
       run: |
         sudo apt-get update
         sudo apt-get install -y neofetch
         neofetch
-      id: neofetch
-
     - name: Create Directories
       run: |
         mkdir -p videos
         mkdir -p artifacts
-
     - name: Install Dependencies
       run: |
         sudo apt-get install -y ffmpeg
         pip install --upgrade yt-dlp
-
-    - name: Cache Neofetch
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.cache/neofetch
-        key: neofetch-${{ runner.os }}-${{ hash(neofetch.outputs) }}
-
     - name: Download Video
       run: |
         cd videos
@@ -55,7 +35,6 @@ jobs:
       run: |
         cd videos
         ffmpeg -i input_video.* -c:v libx264 -crf 28 -preset ultrafast -max_muxing_queue_size 1024 -c:a copy output_video.mkv
-
     - name: Upload to Artifacts
       uses: actions/upload-artifact@v4
       with:
