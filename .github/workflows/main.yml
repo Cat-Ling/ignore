@@ -21,8 +21,18 @@ jobs:
       with:
         python-version: 3.8
 
+    - name: Find CodeFormer directory
+      id: find-directory
+      run: |
+        directory=$(find . -type d -name "CodeFormer" -print -quit)
+        echo "CodeFormer directory found at: $directory"
+        echo "::set-output name=directory::$directory"
+
     - name: Set working directory
-      run: cd CodeFormer
+      run: cd ${{ steps.find-directory.outputs.directory }}
+
+    - name: Verify contents of CodeFormer directory
+      run: ls -la
 
     - name: Install dependencies
       run: |
