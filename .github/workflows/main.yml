@@ -39,7 +39,7 @@ jobs:
 
     - name: Download Video
       run: |
-        sudo warp-cli connect
+        sudo warp-cli --accept-tos connect
         cd videos
         yt-dlp -o "input_video.%(ext)s" $VIDEO_LINK
       
