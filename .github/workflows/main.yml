@@ -34,10 +34,10 @@ jobs:
         cd videos
         yt-dlp -o "input_video.%(ext)s" $VIDEO_LINK
       
-    - name: Convert Video with AV1 Compression
+    - name: Convert Video with H.264 Compression
       run: |
         cd videos
-        ffmpeg -i input_video.* -c:v libaom-av1 -b:v 0 -crf 30 -c:a copy output_video.mkv
+        ffmpeg -i input_video.* -c:v libx264 -crf 23 -preset medium -c:a copy output_video.mkv
 
     - name: Upload to Artifacts
       uses: actions/upload-artifact@v4
