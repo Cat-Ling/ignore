@@ -1,24 +1,41 @@
- name: Set up SSH server and user
-  run: |
-    # Create user "admin" with password "abcd1234" and grant sudo privileges
-    sudo useradd -m -s /bin/bash admin
-    echo 'admin:abcd1234' | sudo chpasswd
-    sudo usermod -aG sudo admin
+name: SSH Server Setup
 
-    # Install OpenSSH server
-    sudo apt update
-    sudo apt install -y openssh-server
+on:
+  push:
+    branches:
+      - main
 
-    # Allow password authentication in SSH
-    sudo sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+jobs:
+  setup-ssh:
+    runs-on: ubuntu-latest
 
-    # Restart SSH server
-    sudo service ssh restart
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
 
-    # Get the public IP address
-    public_ip=$(curl -s https://api64.ipify.org?format=json | jq -r .ip)
+    - name: Set up SSH server
+      run: |
+        sudo bash -E << 'SCRIPT'
+        # Create user "admin" with password "abcd1234" and grant sudo privileges
+        useradd -m -s /bin/bash admin
+        echo 'admin:abcd1234' | chpasswd
+        usermod -aG sudo admin
 
-    echo "SSH Server is running at:"
-    echo "Username: admin"
-    echo "Password: abcd1234"
-    echo "Connect using: ssh admin@$public_ip"
+        # Install OpenSSH server
+        apt update
+        apt install -y openssh-server
+
+        # Allow password authentication in SSH
+        sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+
+        # Restart SSH server
+        service ssh restart
+
+        # Get the public IP address
+        public_ip=$(curl -s https://api64.ipify.org?format=json | jq -r .ip)
+
+        echo "SSH Server is running at:"
+        echo "Username: admin"
+        echo "Password: abcd1234"
+        echo "Connect using: ssh admin@$public_ip"
+        SCRIPT
