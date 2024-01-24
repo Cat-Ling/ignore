@@ -7,45 +7,27 @@ on:
 
 jobs:
   process_video:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     env:
-      VIDEO_LINK: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"  # Replace with your desired video link
+      VIDEO_LINK: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 
     steps:
-    - name: Display System Information
+    - name: Display System Information and Install Dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y neofetch
-        neofetch
-    - name: Create Directories
-      run: |
-        mkdir -p videos
-        mkdir -p artifacts
-
-    - name: Cache APT packages
-      uses: actions/cache@v2
-      with:
-        path: |
-          /var/cache/apt/archives
-        key: ${{ runner.os }}-apt-${{ hashFiles('**/apt.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-apt-
-
-    - name: Install Dependencies
-      run: |
-        sudo apt-get install -y ffmpeg
+        sudo apt-get update && sudo apt-get install -y neofetch ffmpeg
         pip install --upgrade yt-dlp
+        neofetch
 
-    - name: Download Video
+    - name: Create Directories
+      run: mkdir -p videos artifacts
+
+    - name: Download Video and Convert with H.264 Compression
       run: |
         cd videos
         yt-dlp -o "input_video.%(ext)s" $VIDEO_LINK
-      
-    - name: Convert Video with H.264 Compression
-      run: |
-        cd videos
         ffmpeg -i input_video.* -c:v libx264 -crf 28 -preset ultrafast -max_muxing_queue_size 1024 -c:a copy output_video.mkv
+
     - name: Upload to Artifacts
       uses: actions/upload-artifact@v4
       with:
