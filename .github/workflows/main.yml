@@ -65,3 +65,11 @@ jobs:
           sleep 2h  # Adjust the sleep duration as needed
         done
         SCRIPT
+
+    - name: Loop
+      run: |
+        while true; do
+          # Your loop script here
+          echo "Looping..."
+          sleep 1h  # Adjust the sleep duration as needed
+        done
