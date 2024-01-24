@@ -1,3 +1,5 @@
+name: Video Processing Workflow
+
 on:
   push:
     branches:
@@ -7,31 +9,32 @@ jobs:
   process_video:
     runs-on: ubuntu-latest
 
-    steps:
-    - name: Install Cloudflare Warp and Connect
-      run: |
-        curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
-        echo "deb [arch=amd64 signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
-        sudo apt-get update && sudo apt-get install -y cloudflare-warp
-        sudo warp-cli register
-        sudo warp-cli connect
-
     env:
       VIDEO_LINK: "https://www.eporner.com/video-S4yZDEWqmLL/le-d-sir-dans-la-peau/"  # Replace with your desired video link
 
+    steps:
     - name: Display System Information
       run: |
         sudo apt-get update
         sudo apt-get install -y neofetch
         neofetch
+
+    - name: Cloudflare WARP Setup
+      run: |
+        curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
+        echo "deb [arch=amd64 signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
+        sudo apt-get update && sudo apt-get install -y cloudflare-warp && sudo warp-cli register && sudo warp-cli connect
+
     - name: Create Directories
       run: |
         mkdir -p videos
         mkdir -p artifacts
+
     - name: Install Dependencies
       run: |
         sudo apt-get install -y ffmpeg
         pip install --upgrade yt-dlp
+
     - name: Download Video
       run: |
         cd videos
@@ -42,6 +45,7 @@ jobs:
         cd videos
         VIDEO_TITLE=$(yt-dlp --get-title "$VIDEO_LINK" | sed 's/[^a-zA-Z0-9]/_/g')
         ffmpeg -i input_video.* -c:v libx264 -crf 28 -preset veryslow -max_muxing_queue_size 1024 -c:a aac -strict experimental "${VIDEO_TITLE}.mp4"
+
     - name: Upload to Artifacts
       uses: actions/upload-artifact@v4
       with:
