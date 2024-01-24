@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      VIDEO_LINK: "https://youtu.be/S2dRcipMCpw"  # Replace with your desired video link
+      VIDEO_LINK: "https://youtu.be/BKoxJ_4DTPo"  # Replace with your desired video link
 
     steps:
     - name: Display System Information
