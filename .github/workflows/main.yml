@@ -22,10 +22,21 @@ jobs:
       run: |
         mkdir -p videos
         mkdir -p artifacts
+
+    - name: Cache APT packages
+      uses: actions/cache@v2
+      with:
+        path: |
+          /var/cache/apt/archives
+        key: ${{ runner.os }}-apt-${{ hashFiles('**/apt.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-apt-
+
     - name: Install Dependencies
       run: |
         sudo apt-get install -y ffmpeg
         pip install --upgrade yt-dlp
+
     - name: Download Video
       run: |
         cd videos
