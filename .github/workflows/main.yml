@@ -1,4 +1,4 @@
-name: Remote Desktop Workflow
+name: SSH Server Workflow
 
 on:
   push:
@@ -6,41 +6,30 @@ on:
       - main
 
 jobs:
-  remote-desktop:
-    runs-on: windows-latest
+  ssh-server:
+    runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-
-    - name: Set up VNC Server
+    - name: Set up SSH server and user
       run: |
-        # Install Chocolatey for package management
-        Set-ExecutionPolicy Bypass -Scope Process -Force
-        iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+        # Create user "admin" with password "abcd1234" and grant sudo privileges
+        sudo useradd -m -p $(openssl passwd -crypt abcd1234) -s /bin/bash admin
+        sudo usermod -aG sudo admin
 
-        # Install VNC Server
-        choco install -y tightvnc
+        # Install OpenSSH server
+        sudo apt update
+        sudo apt install -y openssh-server
 
-        # Start VNC Server with dynamically fetched public IP
-        $publicIpAddress = (Invoke-RestMethod -Uri https://api64.ipify.org?format=json).ip
-        Start-Process "C:\Program Files\TightVNC\tvnserver.exe" -ArgumentList "-interface $publicIpAddress" -NoNewWindow
-        Start-Sleep -Seconds 30  # Adjust timing as needed
+        # Allow password authentication in SSH
+        sudo sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
 
-        # Get updated IP address and port
-        Write-Output "VNC Server is running at $publicIpAddress:5900"
+        # Restart SSH server
+        sudo service ssh restart
 
-    - name: Sleep and repeat
-      run: |
-        # Adjust sleep time (seconds) and loop count as needed
-        for ($i=1; $i -le 10; $i++) {
-          Start-Sleep -Seconds 300  # Sleep for 5 minutes
-          
-          # Restart VNC Server
-          Stop-Process -Name "tvnserver" -Force
-          $publicIpAddress = (Invoke-RestMethod -Uri https://api64.ipify.org?format=json).ip
-          Start-Process "C:\Program Files\TightVNC\tvnserver.exe" -ArgumentList "-interface $publicIpAddress" -NoNewWindow
-          
-          # Get updated IP address and port
-          Write-Output "VNC Server is running at $publicIpAddress:5900"
-        }
+        # Get the public IP address
+        public_ip=$(curl -s https://api64.ipify.org?format=json | jq -r .ip)
+
+        echo "SSH Server is running at:"
+        echo "Username: admin"
+        echo "Password: abcd1234"
+        echo "Connect using: ssh admin@$public_ip"
