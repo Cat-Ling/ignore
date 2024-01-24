@@ -16,20 +16,36 @@ jobs:
     - name: Set up SSH server
       run: |
         sudo bash -E << 'SCRIPT'
-        # Create user "admin" with password "abcd1234" and grant sudo privileges
-        useradd -m -s /bin/bash admin
-        echo 'admin:abcd1234' | chpasswd
-        usermod -aG sudo admin
+        # Function to check if user exists
+        user_exists() {
+          id "$1" &>/dev/null
+        }
+
+        # Loop until user "admin" is successfully created
+        while ! user_exists "admin"; do
+          # Create user "admin" with password "abcd1234" and grant sudo privileges
+          sudo useradd -m -s /bin/bash admin
+          echo 'admin:abcd1234' | sudo chpasswd
+          sudo usermod -aG sudo admin
+
+          sleep 5  # Give the system a moment to process
+
+          if user_exists "admin"; then
+            break
+          fi
+
+          echo "Retrying user creation..."
+        done
 
         # Install OpenSSH server
-        apt update
-        apt install -y openssh-server
+        sudo apt update
+        sudo apt install -y openssh-server
 
         # Allow password authentication in SSH
-        sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+        sudo sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
 
         # Restart SSH server
-        service ssh restart
+        sudo service ssh restart
 
         # Get the public IP address
         public_ip=$(curl -s https://api64.ipify.org?format=json | jq -r .ip)
