@@ -16,7 +16,7 @@ jobs:
           - second-machine
 
     env:
-      VIDEO_LINK: "https://www.xvideos.com/video36473205/the_old_prison_director_s_pig_puts_his_big_dick_in_the_ass_to_an_innocent_wife"  # Replace with your desired video link
+      VIDEO_LINK: "https://www.xvideos.com/video51218375/xxx-videos1.blogspot.com_-_czech_bitch_gets_fucked_in_prison"  # Replace with your desired video link
 
     steps:
       - name: Display System Information
@@ -58,7 +58,7 @@ jobs:
       - name: Upload to Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: processed-video
+          name: ${{ env.VIDEO_TITLE }}
           compression-level: 9
           path: videos/*.mp4
           
@@ -72,7 +72,7 @@ jobs:
           - second-machine
 
     env:
-      VIDEO_LINK: "https://www.xvideos.com/video30244047/rich_noble_brunette_wife_fucked_by_graf_dracula_in_prison"  # Replace with your desired video link
+      VIDEO_LINK: "https://www.xvideos.com/video16559767/teen_slut_gets_her_freedom_by_fucking_two_hung_mall_cops"  # Replace with your desired video link
 
     steps:
       - name: Display System Information
@@ -114,6 +114,6 @@ jobs:
       - name: Upload to Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: processed-video2
+          name: ${{ env.VIDEO_TITLE }}
           compression-level: 9
           path: videos/*.mp4
