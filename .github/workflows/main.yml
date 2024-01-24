@@ -52,7 +52,8 @@ jobs:
           cd videos
           VIDEO_TITLE=$(yt-dlp --get-title "$VIDEO_LINK" | sed 's/[^a-zA-Z0-9]/_/g')
           ffmpeg -i input_video.* -c:v libx264 -crf 28 -preset veryslow -max_muxing_queue_size 1024 -c:a aac -strict experimental "${VIDEO_TITLE}.mp4"
-
+          rm -rf input_video.*
+          
       - name: Upload to Artifacts
         uses: actions/upload-artifact@v4
         with:
