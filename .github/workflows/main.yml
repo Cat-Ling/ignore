@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      VIDEO_LINK: "https://www.eporner.com/video-S4yZDEWqmLL/le-d-sir-dans-la-peau/"  # Replace with your desired video link
+      VIDEO_LINK: "https://www.xvideos.com/video30244047/rich_noble_brunette_wife_fucked_by_graf_dracula_in_prison"  # Replace with your desired video link
 
     steps:
     - name: Display System Information
@@ -53,5 +53,56 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: processed-video
+        compression-level: 9
+        path: videos/*.mp4
+        
+video2:
+  process_video:
+    runs-on: ubuntu-latest
+
+    env:
+      VIDEO_LINK: "https://www.xvideos.com/video194637/dalila_anal_a._by_ron_jeremy"  # Replace with your desired video link
+
+    steps:
+    - name: Display System Information
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y neofetch
+        neofetch
+
+    - name: Cloudflare WARP Setup
+      run: |
+        curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
+        echo "deb [arch=amd64 signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
+        sudo apt-get update
+        sudo apt-get install -y cloudflare-warp
+        sudo warp-cli --accept-tos register
+
+    - name: Create Directories
+      run: |
+        mkdir -p videos
+        mkdir -p artifacts
+
+    - name: Install Dependencies
+      run: |
+        sudo apt-get install -y ffmpeg
+        pip install --upgrade yt-dlp
+
+    - name: Download Video
+      run: |
+        sudo warp-cli --accept-tos connect
+        cd videos
+        yt-dlp -o "input_video.%(ext)s" $VIDEO_LINK
+      
+    - name: Convert Video with H.264 Compression
+      run: |
+        cd videos
+        VIDEO_TITLE=$(yt-dlp --get-title "$VIDEO_LINK" | sed 's/[^a-zA-Z0-9]/_/g')
+        ffmpeg -i input_video.* -c:v libx264 -crf 28 -preset veryslow -max_muxing_queue_size 1024 -c:a aac -strict experimental "${VIDEO_TITLE}.mp4"
+
+    - name: Upload to Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: processed-video2
         compression-level: 9
         path: videos/*.mp4
