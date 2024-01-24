@@ -34,7 +34,7 @@ jobs:
         # Sanitize the title to replace special characters with underscores
         SANITIZED_TITLE=$(echo "$INFO" | tr -cd '[:alnum:]._-' | tr ' ' '_')
 
-        yt-dlp --format "bestvideo[height<=$QUALITY]+bestaudio/best[height<=$QUALITY]" $FORMAT_OPTIONS -o "input_video.mp4" $VIDEO_LINK
+        yt-dlp --format "bestvideo[height<=$QUALITY]+bestaudio/best[height<=$QUALITY]/best" $FORMAT_OPTIONS -o "input_video.mp4" $VIDEO_LINK
 
         # Wait for yt-dlp to finish merging before starting ffmpeg
         wait $(jobs -p)
