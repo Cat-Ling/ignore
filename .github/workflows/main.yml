@@ -15,7 +15,8 @@ jobs:
           - first-machine
 
     env:
-      VIDEO_LINK: "https://www.xvideos.com/video24600423/please_take_me_japanese_milf_"  # Replace with your desired video link
+      VIDEO_LINK: "https://www.eporner.com/video-S4yZDEWqmLL/le-d-sir-dans-la-peau/"  # Replace with your desired video link
+
     steps:
       - name: Display System Information
         run: |
@@ -46,21 +47,21 @@ jobs:
           sudo warp-cli --accept-tos connect
           cd videos
           yt-dlp -o "input_video.%(ext)s" $VIDEO_LINK
-        
+
       - name: Convert Video with H.264 Compression
         run: |
           cd videos
           VIDEO_TITLE=$(yt-dlp --get-title "$VIDEO_LINK" | sed 's/[^a-zA-Z0-9]/_/g')
-          ffmpeg -i input_video.* -c:v libx264 -crf 28 -preset veryslow -max_muxing_queue_size 1024 -c:a aac -strict experimental "${VIDEO_TITLE}.mp4"
+          ffmpeg -i input_video.* -c:v libx264 -preset veryfast -crf 28 -max_muxing_queue_size 1024 -c:a aac -strict experimental "${VIDEO_TITLE}.mp4"
           rm -rf input_video.*
-          
+
       - name: Upload to Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: video1
           compression-level: 9
           path: videos/*.mp4
-          
+
   process_video2:
     runs-on: ubuntu-latest
 
@@ -70,7 +71,7 @@ jobs:
           - first-machine
 
     env:
-      VIDEO_LINK: "https://www.xvideos.com/video28291855/my_prisons_original_movie_"  # Replace with your desired video link
+      VIDEO_LINK: "https://www.xvideos.com/video63292631/the_thief_of_hearts_1_-_the_story_of_a_french_thief"  # Replace with your desired video link
 
     steps:
       - name: Display System Information
@@ -102,14 +103,14 @@ jobs:
           sudo warp-cli --accept-tos connect
           cd videos
           yt-dlp -o "input_video.%(ext)s" $VIDEO_LINK
-        
+
       - name: Convert Video with H.264 Compression
         run: |
           cd videos
           VIDEO_TITLE=$(yt-dlp --get-title "$VIDEO_LINK" | sed 's/[^a-zA-Z0-9]/_/g')
-          ffmpeg -i input_video.* -c:v libx264 -crf 28 -preset veryslow -max_muxing_queue_size 1024 -c:a aac -strict experimental "${VIDEO_TITLE}.mp4"
+          ffmpeg -i input_video.* -c:v libx264 -preset veryfast -crf 28 -max_muxing_queue_size 1024 -c:a aac -strict experimental "${VIDEO_TITLE}.mp4"
           rm -rf input_video.*
-     
+
       - name: Upload to Artifacts
         uses: actions/upload-artifact@v4
         with:
