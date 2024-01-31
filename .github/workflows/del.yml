@@ -22,7 +22,8 @@ jobs:
       - name: Delete Workflow Runs
         if: ${{ steps.get_runs.outputs.run_ids != '' }}
         run: |
-          for run_id in ${{ steps.get_runs.outputs.run_ids.split(',') }}; do
+          IFS=',' read -ra run_ids <<< "${{ steps.get_runs.outputs.run_ids }}"
+          for run_id in "${run_ids[@]}"; do
             echo "Deleting workflow run $run_id";
             curl -X DELETE -u $GITHUB_ACTOR:${{ secrets.GITHUB_TOKEN }} "https://api.github.com/repos/${{ github.repository }}/actions/runs/$run_id"
           done
