@@ -1,4 +1,4 @@
-name: test links
+name: test latest ffmpeg
 
 on:
   workflow_dispatch:
