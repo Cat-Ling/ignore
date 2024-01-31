@@ -1,0 +1,28 @@
+name: Del
+on:
+  workflow_dispatch: {}
+
+jobs:
+  delete_runs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Workflow Runs
+        id: get_runs
+        uses: actions/github-script@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data } = await github.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            const runIds = data.workflow_runs.map(run => run.id);
+            core.setOutput('run_ids', runIds.join(','))
+
+      - name: Delete Workflow Runs
+        if: steps.get_runs.outputs.run_ids != ''
+        run: |
+          for run_id in ${{ steps.get_runs.outputs.run_ids.split(',') }}; do
+            echo "Deleting workflow run $run_id";
+            curl -X DELETE -u $GITHUB_ACTOR:${{ secrets.GITHUB_TOKEN }} "https://api.github.com/repos/${{ github.repository }}/actions/runs/$run_id"
+          done
