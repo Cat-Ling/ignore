@@ -1,9 +1,11 @@
 name: Video Processing Workflow
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+    inputs:
+      video_link:
+        description: 'link to test'
+        required: true
 
 jobs:
   process_video:
@@ -15,7 +17,7 @@ jobs:
           - first-machine
 
     env:
-      VIDEO_LINK: "https://www.eporner.com/video-WYKpfbsjSzQ/red-haired-hungarian-casting-first-anal-ai-upscaled/"  # Replace with your desired video link
+      VIDEO_LINK: ${{ github.event.inputs.video_link }}
 
     steps:
       - name: Display System Information
@@ -59,61 +61,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: video1
-          compression-level: 9
-          path: videos/*.mp4
-
-  process_video2:
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        machine:
-          - first-machine
-
-    env:
-      VIDEO_LINK: "https://www.eporner.com/video-S86ArBMIKbi/yukikaze-the-movie-upscaled-60fps/"  # Replace with your desired video link
-
-    steps:
-      - name: Display System Information
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y neofetch
-          neofetch
-
-      - name: Cloudflare WARP Setup
-        run: |
-          curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
-          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
-          sudo apt-get update
-          sudo apt-get install -y cloudflare-warp
-          sudo warp-cli --accept-tos register
-
-      - name: Create Directories
-        run: |
-          mkdir -p videos
-          mkdir -p artifacts
-
-      - name: Install Dependencies
-        run: |
-          sudo apt-get install -y ffmpeg
-          pip install --upgrade yt-dlp
-
-      - name: Download Video
-        run: |
-          sudo warp-cli --accept-tos connect
-          cd videos
-          yt-dlp -o "input_video.%(ext)s" $VIDEO_LINK
-
-      - name: Convert Video with H.264 Compression
-        run: |
-          cd videos
-          VIDEO_TITLE=$(yt-dlp --get-title "$VIDEO_LINK" | sed 's/[^a-zA-Z0-9]/_/g')
-          ffmpeg -i input_video.* -c:v libx264 -preset slower -vf fps=24 -crf 28 -max_muxing_queue_size 1024 -c:a aac -strict experimental "${VIDEO_TITLE}.mp4"
-          rm -rf input_video.*
-
-      - name: Upload to Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: video2
           compression-level: 9
           path: videos/*.mp4
