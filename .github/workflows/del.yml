@@ -1,4 +1,4 @@
-name: Del
+name: Delete Workflow Runs
 on:
   workflow_dispatch: {}
 
@@ -20,7 +20,7 @@ jobs:
             core.setOutput('run_ids', runIds.join(','))
 
       - name: Delete Workflow Runs
-        if: steps.get_runs.outputs.run_ids != ''
+        if: ${{ steps.get_runs.outputs.run_ids != '' }}
         run: |
           for run_id in ${{ steps.get_runs.outputs.run_ids.split(',') }}; do
             echo "Deleting workflow run $run_id";
