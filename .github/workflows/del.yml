@@ -1,29 +1,22 @@
-name: Delete Workflow Runs
+name: Delete old workflow runs
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'Days-worth of runs to keep for each workflow'
+        required: true
+        default: '0' # Set to 0 to delete all runs
 
 jobs:
-  delete_runs:
+  del_runs:
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
     steps:
-      - name: Get Workflow Runs
-        id: get_runs
-        uses: actions/github-script@v4
+      - name: Delete workflow runs
+        uses: Mattraks/delete-workflow-runs@v2
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const { data } = await github.actions.listWorkflowRuns({
-              owner: context.repo.owner,
-              repo: context.repo.repo
-            });
-            const runIds = data.workflow_runs.map(run => run.id);
-            core.setOutput('run_ids', runIds.join(','))
-
-      - name: Delete Workflow Runs
-        if: ${{ steps.get_runs.outputs.run_ids != '' }}
-        run: |
-          IFS=',' read -ra run_ids <<< "${{ steps.get_runs.outputs.run_ids }}"
-          for run_id in "${run_ids[@]}"; do
-            echo "Deleting workflow run $run_id";
-            curl -X DELETE -u $GITHUB_ACTOR:${{ secrets.GITHUB_TOKEN }} "https://api.github.com/repos/${{ github.repository }}/actions/runs/$run_id"
-          done
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          retain_days: ${{ github.event.inputs.days }}
