@@ -43,6 +43,19 @@ jobs:
   process_video:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        machine:
+          - first-machine
+
+    env:
+      VIDEO_LINK: ${{ github.event.inputs.video_link }}
+      PRESET: ${{ github.event.inputs.preset }}
+      FPS: ${{ github.event.inputs.fps }}
+      CRF: ${{ github.event.inputs.crf }}
+      ENCODER: ${{ github.event.inputs.encoder }}
+      ANAME: ${{ github.event.inputs.aname }}
+
     steps:
       - name: Display System Information
         run: |
@@ -69,26 +82,21 @@ jobs:
           sudo pip install --upgrade yt-dlp
 
       - name: Download Video
-        id: download_videos
         run: |
           sudo warp-cli --accept-tos connect
           cd videos
-          yt-dlp -J --flat-playlist ${{ github.event.inputs.video_link }} > playlist_info.json
+          sudo nice -n -20 yt-dlp -o "input_video.%(ext)s" $VIDEO_LINK
 
-      - name: Process Videos
+      - name: Convert Video with H.264 Compression
         run: |
           cd videos
-          jq -r '.entries | .[] | "\(.url)"' playlist_info.json | while read -r video_url; do
-            echo "Processing video: $video_url"
-            sudo nice -n -20 yt-dlp -o "input_video.%(ext)s" "$video_url"
-            VIDEO_TITLE=$(yt-dlp --get-title "$video_url" | sed 's/[^a-zA-Z0-9]/_/g')
-            sudo nice -n -20 ffmpeg -i input_video.* -c:v ${{ github.event.inputs.encoder }} -preset ${{ github.event.inputs.preset }} -vf fps=${{ github.event.inputs.fps }} -crf ${{ github.event.inputs.crf }} -max_muxing_queue_size 9999 -c:a aac -strict experimental "${VIDEO_TITLE}_${RANDOM}.mp4"
-            rm -rf input_video.*
-          done
+          VIDEO_TITLE=$(yt-dlp --get-title "$VIDEO_LINK" | sed 's/[^a-zA-Z0-9]/_/g')
+          sudo nice -n -20 ffmpeg -i input_video.* -c:v $ENCODER -preset $PRESET -vf fps=$FPS -crf $CRF -max_muxing_queue_size 9999 -c:a aac -strict experimental "${ANAME}.mp4"
+          rm -rf input_video.*
 
       - name: Upload to Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ github.event.inputs.aname }}_${{ matrix.video_index }}
+          name: ${{ github.event.inputs.aname }}
           compression-level: 9
           path: videos/*.mp4
