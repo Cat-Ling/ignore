@@ -38,7 +38,7 @@ on:
           - libvpx-vp9
           - libaom-av1
       aname:
-        description: 'Name of the output video (optional)'
+        description: 'Name of the artifact zip (optional)'
         default: video1
 
 jobs:
