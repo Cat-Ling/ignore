@@ -1,10 +1,10 @@
-name: no fm
+name: fm
 
 on:
   workflow_dispatch:
     inputs:
       video_link:
-        description: 'Link'
+        description: 'Link to video'
         required: true
       format:
         description: 'Format (video or audio)'
