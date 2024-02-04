@@ -23,11 +23,9 @@ on:
       fps:
         description: 'Frames per second (optional)'
         default: 24
-        type: choice
       crf:
-        description: 'Constant rate factor (optional)'
+        description: 'Constant rate factor (optional) (0–63) lower means higher quality, (17–28) sane range'
         default: 28
-        type: choice
       encoder:
         description: 'FFmpeg encoder (optional)'
         default: libx264
