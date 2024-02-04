@@ -1,0 +1,78 @@
+name: no fm
+
+on:
+  workflow_dispatch:
+    inputs:
+      video_link:
+        description: 'Link'
+        required: true
+      format:
+        description: 'Format (video or audio)'
+        required: false
+        default: 'mp4'
+        type: choice
+        options:
+          - mp4
+          - webm
+          - mkv
+          - flv
+          - mp3
+          - aac
+      quality:
+        description: 'Video quality (for video formats) or audio quality (for audio formats)'
+        required: false
+        default: 'best'
+        type: choice
+        options:
+          - best
+          - worst
+          - 1080p
+          - 720p
+          - 480p
+          - 360p
+          - 240p
+      aname:
+        description: 'Name of the artifact zip'
+        required: true
+
+jobs:
+  process_video:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Display System Information
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y neofetch
+          neofetch
+
+      - name: Cloudflare WARP Setup
+        run: |
+          curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
+          sudo apt-get update
+          sudo apt-get install -y cloudflare-warp
+          sudo warp-cli --accept-tos register
+
+      - name: Create Directories
+        run: |
+          mkdir -p videos
+          mkdir -p artifacts
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get install -y ffmpeg
+          sudo pip install --upgrade yt-dlp
+
+      - name: Download Video
+        run: |
+          cd videos
+          sudo warp-cli --accept-tos connect
+          yt-dlp -f ${{ github.event.inputs.format }} -q ${{ github.event.inputs.quality }} "${{ github.event.inputs.video_link }}"
+
+      - name: Upload Videos to Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.inputs.aname }}
+          compression-level: 9
+          path: videos/
