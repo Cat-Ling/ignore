@@ -9,6 +9,7 @@ on:
       preset:
         description: 'FFmpeg preset (optional)'
         default: slower
+        type: choice
         options:
           - ultrafast
           - superfast
@@ -22,17 +23,23 @@ on:
       fps:
         description: 'Frames per second (optional)'
         default: 24
+        type: choice
       crf:
         description: 'Constant rate factor (optional)'
         default: 28
+        type: choice
       encoder:
         description: 'FFmpeg encoder (optional)'
         default: libx264
+        type: choice
         options:
           - libx264
           - libx265
           - libvpx-vp9
           - libaom-av1
+      aname:
+        description: 'Name of the output video (optional)'
+        default: video1
 
 jobs:
   process_video:
@@ -49,6 +56,7 @@ jobs:
       FPS: ${{ github.event.inputs.fps }}
       CRF: ${{ github.event.inputs.crf }}
       ENCODER: ${{ github.event.inputs.encoder }}
+      ANAME: ${{ github.event.inputs.aname }}
 
     steps:
       - name: Display System Information
@@ -85,12 +93,12 @@ jobs:
         run: |
           cd videos
           VIDEO_TITLE=$(yt-dlp --get-title "$VIDEO_LINK" | sed 's/[^a-zA-Z0-9]/_/g')
-          sudo nice -n -20 ffmpeg -i input_video.* -c:v $ENCODER -preset $PRESET -vf fps=$FPS -crf $CRF -max_muxing_queue_size 9999 -c:a aac -strict experimental "${VIDEO_TITLE}.mp4"
+          sudo nice -n -20 ffmpeg -i input_video.* -c:v $ENCODER -preset $PRESET -vf fps=$FPS -crf $CRF -max_muxing_queue_size 9999 -c:a aac -strict experimental "${ANAME}.mp4"
           rm -rf input_video.*
 
       - name: Upload to Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: video1
+          name: ${{ github.event.inputs.aname }}
           compression-level: 9
           path: videos/*.mp4
