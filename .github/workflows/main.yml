@@ -91,7 +91,7 @@ jobs:
         run: |
           cd videos
           VIDEO_TITLE=$(yt-dlp --get-title "$VIDEO_LINK" | sed 's/[^a-zA-Z0-9]/_/g')
-          sudo nice -n -20 ffmpeg -i input_video.* -c:v $ENCODER -preset $PRESET -vf fps=$FPS -crf $CRF -max_muxing_queue_size 9999 -c:a aac -strict experimental "${ANAME}.mp4"
+          sudo nice -n -20 ffmpeg -i input_video.* -c:v $ENCODER -preset $PRESET -vf fps=$FPS -crf $CRF -max_muxing_queue_size 9999 -c:a aac -strict experimental "${VIDEO_TITLE}.mp4"
           rm -rf input_video.*
 
       - name: Upload to Artifacts
