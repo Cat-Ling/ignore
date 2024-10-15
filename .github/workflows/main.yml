@@ -62,7 +62,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y neofetch
           neofetch
-
       - name: Cloudflare WARP Setup
         run: |
           curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
@@ -70,35 +69,27 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y cloudflare-warp
           sudo warp-cli --accept-tos registration new
-
-      - name: Set DNS to Cloudflare
-        run: |
-          echo "nameserver 1.1.1.1" | sudo tee /etc/resolv.conf > /dev/null
-          echo "nameserver 1.0.0.1" | sudo tee -a /etc/resolv.conf > /dev/null
-
+          sudo warp-cli mode proxy
+          sudo warp-cli proxy port 9091
       - name: Create Directories
         run: |
           mkdir -p videos
           mkdir -p artifacts
-
       - name: Install Dependencies
         run: |
           sudo apt-get install -y ffmpeg
           sudo pip install --upgrade yt-dlp --break-system-packages
-
       - name: Download Video
         run: |
           sudo warp-cli --accept-tos connect
           cd videos
-          sudo nice -n -20 yt-dlp -o "input_video.%(ext)s" $VIDEO_LINK
-
+          sudo nice -n -20 yt-dlp --proxy 'socks5://127.0.0.1:9091' -o "input_video.%(ext)s" $VIDEO_LINK
       - name: Convert Video with H.264 Compression
         run: |
           cd videos
           VIDEO_TITLE=$(yt-dlp --get-title "$VIDEO_LINK" | sed 's/[^a-zA-Z0-9]/_/g')
           sudo nice -n -20 ffmpeg -i input_video.* -c:v $ENCODER -preset $PRESET -vf fps=$FPS -crf $CRF -max_muxing_queue_size 9999 -c:a aac -strict experimental "${VIDEO_TITLE}.mp4"
           rm -rf input_video.*
-
       - name: Upload to Artifacts
         uses: actions/upload-artifact@v4
         with:
