@@ -69,8 +69,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y cloudflare-warp
           sudo warp-cli --accept-tos registration new
-          sudo warp-cli --accept-tos mode proxy
-          sudo warp-cli --accept-tos proxy port 9091
       - name: Create Directories
         run: |
           mkdir -p videos
@@ -82,8 +80,10 @@ jobs:
       - name: Download Video
         run: |
           sudo warp-cli --accept-tos connect
+          sudo warp-cli --accept-tos mode proxy
+          sudo warp-cli --accept-tos proxy port 9091
           cd videos
-          sudo nice -n -20 yt-dlp --proxy 'socks5://127.0.0.1:9091' -o "input_video.%(ext)s" $VIDEO_LINK
+          sudo nice -n -20 yt-dlp --proxy "socks5://127.0.0.1:9091" -o "input_video.%(ext)s" $VIDEO_LINK
       - name: Convert Video with H.264 Compression
         run: |
           cd videos
