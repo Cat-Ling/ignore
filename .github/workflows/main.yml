@@ -76,7 +76,8 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get install -y ffmpeg
-          sudo pip install --upgrade yt-dlp --break-system-packages
+          sudo apt install -y yt-dlp
+          echo sudo pip install --upgrade yt-dlp --break-system-packages
       - name: Download Video
         run: |
           sudo warp-cli --accept-tos connect
