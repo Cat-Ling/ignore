@@ -71,6 +71,11 @@ jobs:
           sudo apt-get install -y cloudflare-warp
           sudo warp-cli --accept-tos registration new
 
+      - name: Set DNS to Cloudflare
+        run: |
+          echo "nameserver 1.1.1.1" | sudo tee /etc/resolv.conf > /dev/null
+          echo "nameserver 1.0.0.1" | sudo tee -a /etc/resolv.conf > /dev/null
+
       - name: Create Directories
         run: |
           mkdir -p videos
