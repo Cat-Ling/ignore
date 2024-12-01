@@ -1,3 +1,44 @@
+name: test latest ffmpeg
+
+on:
+  workflow_dispatch:
+    inputs:
+      video_link:
+        description: 'link to test'
+        required: true
+      preset:
+        description: 'FFmpeg preset (optional)'
+        default: slower
+        type: choice
+        options:
+          - ultrafast
+          - superfast
+          - veryfast
+          - faster
+          - fast
+          - medium
+          - slow
+          - slower
+          - veryslow
+      fps:
+        description: 'Frames per second (optional)'
+        default: 24
+      crf:
+        description: 'Constant rate factor (optional) (0–63) lower means higher quality, (17–28) sane range'
+        default: 28
+      encoder:
+        description: 'FFmpeg encoder (optional)'
+        default: libx264
+        type: choice
+        options:
+          - libx264
+          - libx265
+          - libvpx-vp9
+          - libaom-av1
+      aname:
+        description: 'Name of the artifact zip (optional)'
+        default: video1
+
 jobs:
   process_video:
     runs-on: ubuntu-latest
@@ -14,7 +55,7 @@ jobs:
       CRF: ${{ github.event.inputs.crf }}
       ENCODER: ${{ github.event.inputs.encoder }}
       ANAME: ${{ github.event.inputs.aname }}
-      YTDLP_NO_LAZY_EXTRACTORS: true  # Add this line
+      YTDLP_NO_LAZY_EXTRACTORS: true
 
     steps:
       - name: Display System Information
