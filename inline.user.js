@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Force Inline Video Playback
+// @name         Force Inline Video Playback (Fixed)
 // @namespace    https://your.namespace.here
-// @version      1.0
-// @description  Forces videos to play inline by adding playsinline and webkit-playsinline attributes.
+// @version      1.1
+// @description  Forces videos to play inline by adding playsinline and webkit-playsinline attributes, while keeping controls intact.
 // @author       You
 // @match        *://*/*
 // @grant        none
@@ -15,7 +15,6 @@
         if (video && !video.hasAttribute('playsinline')) {
             video.setAttribute('playsinline', '');
             video.setAttribute('webkit-playsinline', '');
-            video.removeAttribute('controls'); // Optional: Remove fullscreen button
             console.log('[UserScript] Forced inline playback on:', video);
         }
     }
