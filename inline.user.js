@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Force Inline Video Playback (Auto-Hide Controls)
+// @name         Force Inline Video Playback (WebKit Optimized)
 // @namespace    https://your.namespace.here
-// @version      1.2
-// @description  Forces videos to play inline while keeping controls, but auto-hiding them after playback starts.
+// @version      1.3
+// @description  Forces inline video playback and hides controls quickly using WebKit-specific features.
 // @author       You
 // @match        *://*/*
 // @grant        none
@@ -18,13 +18,25 @@
             console.log('[UserScript] Forced inline playback on:', video);
         }
 
-        // Auto-hide controls after play starts
+        // Auto-hide controls using WebKit styling
         video.addEventListener('play', () => {
             setTimeout(() => {
-                video.removeAttribute('controls'); // Hide controls
-                video.setAttribute('controls', ''); // Re-add to keep them usable
-            }, 2000); // Adjust delay as needed
+                video.removeAttribute('controls'); // Temporarily remove to reset visibility
+                video.setAttribute('controls', ''); // Re-add to keep controls functional
+            }, 500); // Shorter delay for WebKit behavior
         });
+
+        // Hide controls using WebKit-specific CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            video::-webkit-media-controls-panel {
+                display: none !important;
+            }
+            video:active::-webkit-media-controls-panel {
+                display: flex !important;
+            }
+        `;
+        document.head.appendChild(style);
     }
 
     function processVideos() {
