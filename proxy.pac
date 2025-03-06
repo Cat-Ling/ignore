@@ -191,3 +191,6 @@ function FindProxyForURL(url, host) {
         if (host == tiktokDomains[i]) {
             return "SOCKS5 192.168.1.165:1080";
         }
+
+    return "DIRECT";
+}
