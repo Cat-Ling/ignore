@@ -1,0 +1,155 @@
+{
+    "log": {
+        "disabled": false,
+        "level": "fatal",
+        "timestamp": true
+    },
+    "experimental": {
+        "clash_api": {
+            "external_controller": "0.0.0.0:9090",
+            "external_ui": "metacubexd",
+            "external_ui_download_url": "https://github.com/MetaCubeX/metacubexd/archive/refs/heads/gh-pages.zip",
+            "external_ui_download_detour": "direct",
+            "default_mode": "rule"
+        },
+        "cache_file": {
+            "enabled": true,
+            "path": "cache.db",
+            "store_fakeip": false
+        }
+    },
+    "dns": {
+        "servers": [
+            {
+                "tag": "dns-remote",
+                "address": "https://1.1.1.1/dns-query",
+                "address_resolver": "dns-direct",
+                "address_strategy": "ipv4_only"
+            },
+            {
+                "tag": "dns-direct",
+                "address": "tcp://8.8.8.8",
+                "address_resolver": "dns-local",
+                "detour": "direct"
+            },
+            {
+                "tag": "dns-local",
+                "address": "local",
+                "detour": "bypass"
+            },
+            {
+                "tag": "dns-block",
+                "address": "rcode://success"
+            }
+        ],
+        "final": "dns-remote",
+        "independent_cache": true
+    },
+    "inbounds": [
+        {
+            "type": "tun",
+            "tag": "tun-in",
+            "domain_strategy": "ipv4_only",
+            "interface_name": "sing-tun",
+            "inet4_address": "172.19.0.1/30",
+            "mtu": 1280,
+            "auto_route": true,
+            "strict_route": true,
+            "stack": "gvisor",
+            "endpoint_independent_nat": true,
+            "sniff": true,
+            "sniff_override_destination": false
+        },
+        {
+            "listen": "0.0.0.0",
+            "listen_port": 1080,
+            "udp_timeout": 3000,
+            "type": "mixed",
+            "tag": "mixed-in",
+            "tcp_fast_open": true
+        }
+    ],
+    "outbounds": [
+        {
+            "tag": "Proxy",
+            "type": "selector",
+            "outbounds": [
+                "WARP-MAIN"
+            ],
+            "default": "WARP-MAIN",
+            "interrupt_exist_connections": false
+        },
+        {
+            "tag": "Auto",
+            "type": "urltest",
+            "outbounds": [
+                "WARP-MAIN"
+            ],
+            "url": "http://cp.cloudflare.com/",
+            "interval": "15m",
+            "tolerance": 50,
+            "idle_timeout": "30m",
+            "interrupt_exist_connections": false
+        },
+        {
+            "tag": "WARP-MAIN",
+            "type": "wireguard",
+            "server": "188.114.96.178",
+            "server_port": 4198,
+            "local_address": [
+                "172.16.0.2/32",
+                "2606:4700:110:8735:bb29:91bc:1c82:aa73/128"
+            ],
+            "private_key": "wGWdglMjS4IWaV5Xs5qdiu0dkDzQWTCwta46Qq7P5nA=",
+            "peer_public_key": "bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo=",
+            "mtu": 1384,
+            "reserved": [
+                175,
+                203,
+                132
+            ],
+            "detour": "direct",
+            "workers": 4
+        },
+        {
+            "tag": "direct",
+            "type": "direct"
+        },
+        {
+            "tag": "block",
+            "type": "block"
+        },
+        {
+            "type": "direct",
+            "tag": "bypass"
+        },
+        {
+            "tag": "dns-out",
+            "type": "dns"
+        }
+    ],
+    "route": {
+        "auto_detect_interface": true,
+        "override_android_vpn": true,
+        "final": "Proxy",
+        "rules": [
+            {
+                "type": "logical",
+                "mode": "or",
+                "rules": [
+                    {
+                        "protocol": "dns"
+                    },
+                    {
+                        "port": 53
+                    }
+                ],
+                "outbound": "dns-out"
+            },
+            {
+                "ip_is_private": true,
+                "outbound": "bypass"
+            }
+        ]
+    }
+}
