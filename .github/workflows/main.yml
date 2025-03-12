@@ -67,11 +67,11 @@ jobs:
           echo "deb [arch=`dpkg --print-architecture` signed-by=/etc/apt/keyrings/sagernet.asc] https://deb.sagernet.org/ * *" | \
           sudo tee /etc/apt/sources.list.d/sagernet.list > /dev/null
           sudo apt-get update
-          sudo apt-get install -y neofetch sing-box
+          sudo apt-get install -y neofetch sing-box=1.11.4
           neofetch
       - name: sing-box setup
         run: |
-          sudo rm -f /etc/sing-box/config.json && sudo curl -sSL 'https://raw.githubusercontent.com/Cat-Ling/Hiddify-Warp/refs/heads/main/sing-box.json' -o /etc/sing-box/config.json && systemctl restart sing-box
+          sudo rm -f /etc/sing-box/config.json && sudo curl -sSL 'https://raw.githubusercontent.com/Cat-Ling/Hiddify-Warp/refs/heads/main/sing-box.json' -o /etc/sing-box/config.json && sudo systemctl restart sing-box
       - name: Create Directories
         run: |
           mkdir -p videos
