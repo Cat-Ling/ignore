@@ -70,8 +70,12 @@ jobs:
           neofetch
       - name: sing-box setup
         run: |
-          export ENABLE_DEPRECATED_TUN_ADDRESS_X=true && sudo rm -f /etc/sing-box/config.json && sudo curl -sSL 'https://github.com/Cat-Ling/ignore/raw/refs/heads/main/config.json' -o /etc/sing-box/config.json && sudo systemctl restart sing-box
-          sleep 5
+          export ENABLE_DEPRECATED_TUN_ADDRESS_X=true
+          sudo rm -f /etc/sing-box/config.json
+          sudo curl -sSL 'https://github.com/Cat-Ling/ignore/raw/refs/heads/main/config.json' -o /etc/sing-box/config.json
+          sudo systemctl disable sing-box
+          sleep 2
+          sudo sing-box run -c /etc/sing-box/config.json
           curl https://ifconfig.me/ip
       - name: Create Directories
         run: |
@@ -81,7 +85,7 @@ jobs:
         run: |
           sudo apt-get install -y ffmpeg
           sudo apt install -y yt-dlp
-          echo sudo pip install --upgrade yt-dlp --break-system-packages
+          echo used to be sudo pip install --upgrade yt-dlp --break-system-packages
       - name: Download Video
         run: |
           cd videos
