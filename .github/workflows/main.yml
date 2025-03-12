@@ -56,9 +56,6 @@ jobs:
       ENCODER: ${{ github.event.inputs.encoder }}
       ANAME: ${{ github.event.inputs.aname }}
       ENABLE_DEPRECATED_TUN_ADDRESS_X: true
-      ALL_PROXY: http://127.0.0.1:1080
-      HTTP_PROXY: http://127.0.0.1:1080
-      HTTPS_PROXY: http://127.0.0.1:1080
       
 
     steps:
@@ -73,7 +70,8 @@ jobs:
           neofetch
       - name: sing-box setup
         run: |
-          sudo rm -f /etc/sing-box/config.json && sudo curl -sSL 'https://github.com/Cat-Ling/ignore/raw/refs/heads/main/config.json' -o /etc/sing-box/config.json && sudo systemctl restart sing-box && sleep 2
+          export ENABLE_DEPRECATED_TUN_ADDRESS_X=true && sudo rm -f /etc/sing-box/config.json && sudo curl -sSL 'https://github.com/Cat-Ling/ignore/raw/refs/heads/main/config.json' -o /etc/sing-box/config.json && sudo systemctl restart sing-box
+          sleep 5
           curl https://ifconfig.me/ip
       - name: Create Directories
         run: |
