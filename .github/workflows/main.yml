@@ -70,12 +70,11 @@ jobs:
           neofetch
       - name: sing-box setup
         run: |
-          export ENABLE_DEPRECATED_TUN_ADDRESS_X=true
           sudo rm -f /etc/sing-box/config.json
           sudo curl -sSL 'https://github.com/Cat-Ling/ignore/raw/refs/heads/main/config.json' -o /etc/sing-box/config.json
           sudo systemctl disable sing-box
           sleep 2
-          sudo sing-box run -c /etc/sing-box/config.json
+          sudo ENABLE_DEPRECATED_TUN_ADDRESS_X=true nohup sing-box run -c /etc/sing-box/config.json > sing-box.log 2>&1 &
           curl https://ifconfig.me/ip
       - name: Create Directories
         run: |
