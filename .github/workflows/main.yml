@@ -1,3 +1,58 @@
+name: test latest ffmpeg
+
+on:
+  workflow_dispatch:
+    inputs:
+      video_link:
+        description: 'link to test'
+        required: true
+      downloader:
+        description: 'Downloader option'
+        default: none
+        type: choice
+        options:
+          - none
+          - ffmpeg
+          - aria2c
+      preset:
+        description: 'FFmpeg preset (optional)'
+        default: slower
+        type: choice
+        options:
+          - ultrafast
+          - superfast
+          - veryfast
+          - faster
+          - fast
+          - medium
+          - slow
+          - slower
+          - veryslow
+      fps:
+        description: 'Frames per second (optional)'
+        default: 24
+      crf:
+        description: 'Constant rate factor (optional) (0–63) lower means higher quality, (17–28) sane range'
+        default: 28
+      encoder:
+        description: 'FFmpeg encoder (optional)'
+        default: libx264
+        type: choice
+        options:
+          - libx264
+          - libx265
+          - libvpx-vp9
+          - libaom-av1
+      aname:
+        description: 'Name of the artifact zip (optional)'
+        default: video1
+      proxy:
+        description: 'Proxy option'
+        default: true
+        type: choice
+        options:
+          - true
+          - false
 jobs:
   process_video:
     runs-on: ubuntu-latest
