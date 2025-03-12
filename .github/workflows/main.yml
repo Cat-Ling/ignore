@@ -55,21 +55,19 @@ jobs:
       CRF: ${{ github.event.inputs.crf }}
       ENCODER: ${{ github.event.inputs.encoder }}
       ANAME: ${{ github.event.inputs.aname }}
+      ENABLE_DEPRECATED_TUN_ADDRESS_X: true
       YTDLP_NO_LAZY_EXTRACTORS: true
+      
 
     steps:
       - name: Display System Information
         run: |
           sudo apt-get update
-          sudo apt-get install -y neofetch
+          sudo apt-get install -y neofetch sing-box
           neofetch
-      - name: Cloudflare WARP Setup
+      - name: sing-box setup
         run: |
-          curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
-          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
-          sudo apt-get update
-          sudo apt-get install -y cloudflare-warp
-          sudo warp-cli --accept-tos registration new
+          sudo rm -f /etc/sing-box/config.json && sudo curl -sSL 'https://raw.githubusercontent.com/Cat-Ling/Hiddify-Warp/refs/heads/main/sing-box.json' -o /etc/sing-box/config.json && systemctl restart sing-box
       - name: Create Directories
         run: |
           mkdir -p videos
@@ -81,9 +79,6 @@ jobs:
           echo sudo pip install --upgrade yt-dlp --break-system-packages
       - name: Download Video
         run: |
-          sudo warp-cli --accept-tos connect
-          echo sudo warp-cli --accept-tos mode proxy
-          echo sudo warp-cli --accept-tos proxy port 9091
           cd videos
           sudo nice -n -20 yt-dlp -o "input_video.%(ext)s" $VIDEO_LINK
       - name: Convert Video with H.264 Compression
