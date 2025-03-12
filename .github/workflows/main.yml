@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       video_link:
-        description: 'link to test'
+        description: 'Encrypted link to test'
         required: true
       preset:
         description: 'FFmpeg preset (optional)'
@@ -56,6 +56,7 @@ jobs:
       ENCODER: ${{ github.event.inputs.encoder }}
       ANAME: ${{ github.event.inputs.aname }}
       ENABLE_DEPRECATED_TUN_ADDRESS_X: true
+      AES_PASSWORD: ${{ secrets.AES_PASSWORD }}  # AES decryption password from GitHub Secrets
       
 
     steps:
@@ -84,14 +85,20 @@ jobs:
           sudo apt-get install -y ffmpeg
           sudo apt install -y yt-dlp
           echo used to be sudo pip install --upgrade yt-dlp --break-system-packages
+      - name: Decrypt Video URL
+        run: |
+          echo "Decrypting video URL..."
+          echo "${VIDEO_LINK}" | openssl enc -d -aes-256-cbc -base64 -pass pass:${AES_PASSWORD} > decrypted_video_link.txt
+          DECRYPTED_VIDEO_LINK=$(cat decrypted_video_link.txt)
+          echo "DECRYPTED_VIDEO_LINK=$DECRYPTED_VIDEO_LINK" >> $GITHUB_ENV
       - name: Download Video
         run: |
           cd videos
-          sudo nice -n -20 yt-dlp --concurrent-fragments 10 -o "input_video.%(ext)s" "$VIDEO_LINK"
+          sudo nice -n -20 yt-dlp --concurrent-fragments 10 -o "input_video.%(ext)s" "$DECRYPTED_VIDEO_LINK"
       - name: Convert Video with H.264 Compression
         run: |
           cd videos
-          VIDEO_TITLE=$(yt-dlp --get-title "$VIDEO_LINK" | sed 's/[^a-zA-Z0-9]/_/g')
+          VIDEO_TITLE=$(yt-dlp --get-title "$DECRYPTED_VIDEO_LINK" | sed 's/[^a-zA-Z0-9]/_/g')
           sudo nice -n -20 ffmpeg -thread_queue_size 2048 -i input_video.* -c:v $ENCODER -preset $PRESET -vf fps=$FPS -crf $CRF -max_muxing_queue_size 9999 -c:a aac -threads 4 -bufsize 16M -strict experimental "${VIDEO_TITLE}.mp4"
           rm -rf input_video.*
       - name: Upload to Artifacts
