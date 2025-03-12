@@ -1,59 +1,3 @@
-name: test latest ffmpeg
-
-on:
-  workflow_dispatch:
-    inputs:
-      video_link:
-        description: 'link to test'
-        required: true
-      downloader:
-        description: 'Downloader option'
-        default: none
-        type: choice
-        options:
-          - none
-          - ffmpeg
-          - aria2c
-      preset:
-        description: 'FFmpeg preset (optional)'
-        default: slower
-        type: choice
-        options:
-          - ultrafast
-          - superfast
-          - veryfast
-          - faster
-          - fast
-          - medium
-          - slow
-          - slower
-          - veryslow
-      fps:
-        description: 'Frames per second (optional)'
-        default: 24
-      crf:
-        description: 'Constant rate factor (optional) (0–63) lower means higher quality, (17–28) sane range'
-        default: 28
-      encoder:
-        description: 'FFmpeg encoder (optional)'
-        default: libx264
-        type: choice
-        options:
-          - libx264
-          - libx265
-          - libvpx-vp9
-          - libaom-av1
-      aname:
-        description: 'Name of the artifact zip (optional)'
-        default: video1
-      proxy:
-        description: 'Proxy option'
-        default: true
-        type: choice
-        options:
-          - true
-          - false
-
 jobs:
   process_video:
     runs-on: ubuntu-latest
@@ -75,6 +19,24 @@ jobs:
       PROXY: ${{ github.event.inputs.proxy }}
       
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Download encrypted file
+        run: curl -L "${{ secrets.URL }}" -o cookies.txt.gpg || true  # Continue even if this fails
+
+      - name: Decrypt file (if exists)
+        run: |
+          if [ -f cookies.txt.gpg ]; then
+            echo "${{ secrets.AES_PASSWORD }}" | gpg --batch --passphrase-fd 0 --decrypt cookies.txt.gpg > cookies.txt
+            if [ -f cookies.txt ]; then
+              echo "Decryption successful, using cookies.txt"
+            else
+              echo "Decryption failed, using default method"
+              exit 1  # Trigger fallback by failing this step
+            fi
+          fi
+      
       - name: Install Sing-box (if proxy is enabled)
         if: env.PROXY == 'true'
         run: |
@@ -94,7 +56,7 @@ jobs:
           sleep 2
           sudo ENABLE_DEPRECATED_TUN_ADDRESS_X=true nohup sing-box run -c /etc/sing-box/config.json > sing-box.log 2>&1 &
           curl https://ifconfig.me/ip
-      
+
       - name: Create Directories
         run: |
           mkdir -p videos
@@ -104,18 +66,25 @@ jobs:
         run: |
           sudo apt-get install -y ffmpeg
           sudo apt-get install -y yt-dlp
-          echo used to be sudo pip install --upgrade yt-dlp --break-system-packages
           sudo apt-get install -y aria2
       
       - name: Download Video
         run: |
           cd videos
-          if [ "$DOWNLOADER" == "ffmpeg" ]; then
-            sudo nice -n -20 yt-dlp --downloader ffmpeg -o "input_video.%(ext)s" "$VIDEO_LINK"
-          elif [ "$DOWNLOADER" == "aria2c" ]; then
-            sudo nice -n -20 yt-dlp --downloader aria2c -o "input_video.%(ext)s" "$VIDEO_LINK"
+          # Check if cookies.txt exists and adjust the path accordingly
+          if [ -f "../cookies.txt" ]; then
+            COOKIE_OPTION="--cookies ../cookies.txt"
+          elif [ -f "cookies.txt" ]; then
+            COOKIE_OPTION="--cookies cookies.txt"
           else
-            sudo nice -n -20 yt-dlp --concurrent-fragments 10 -o "input_video.%(ext)s" "$VIDEO_LINK"
+            COOKIE_OPTION=""
+          fi
+          if [ "$DOWNLOADER" == "ffmpeg" ]; then
+            sudo nice -n -20 yt-dlp --downloader ffmpeg $COOKIE_OPTION -o "input_video.%(ext)s" "$VIDEO_LINK"
+          elif [ "$DOWNLOADER" == "aria2c" ]; then
+            sudo nice -n -20 yt-dlp --downloader aria2c $COOKIE_OPTION -o "input_video.%(ext)s" "$VIDEO_LINK"
+          else
+            sudo nice -n -20 yt-dlp --concurrent-fragments 10 $COOKIE_OPTION -o "input_video.%(ext)s" "$VIDEO_LINK"
           fi
       
       - name: Convert Video with H.264 Compression
