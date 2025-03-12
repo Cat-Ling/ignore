@@ -88,7 +88,7 @@ jobs:
       - name: Download Video
         run: |
           cd videos
-          sudo nice -n -20 yt-dlp -o "input_video.%(ext)s" $VIDEO_LINK
+          sudo nice -n -20 yt-dlp --concurrent-fragments 10 -o "input_video.%(ext)s" $VIDEO_LINK
       - name: Convert Video with H.264 Compression
         run: |
           cd videos
