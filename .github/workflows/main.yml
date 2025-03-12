@@ -46,6 +46,13 @@ on:
       aname:
         description: 'Name of the artifact zip (optional)'
         default: video1
+      proxy:
+        description: 'Proxy option'
+        default: false
+        type: choice
+        options:
+          - true
+          - false
 
 jobs:
   process_video:
@@ -65,9 +72,11 @@ jobs:
       ENCODER: ${{ github.event.inputs.encoder }}
       ANAME: ${{ github.event.inputs.aname }}
       ENABLE_DEPRECATED_TUN_ADDRESS_X: true
+      PROXY: ${{ github.event.inputs.proxy }}
       
     steps:
-      - name: sing-box install
+      - name: Install Sing-box (if proxy is enabled)
+        if: env.PROXY == 'true'
         run: |
           sudo curl -fsSL https://sing-box.app/gpg.key -o /etc/apt/keyrings/sagernet.asc
           sudo chmod a+r /etc/apt/keyrings/sagernet.asc
@@ -75,7 +84,9 @@ jobs:
           sudo tee /etc/apt/sources.list.d/sagernet.list > /dev/null
           sudo apt-get update
           sudo apt-get install -y sing-box=1.11.4
-      - name: sing-box setup
+      
+      - name: Setup Sing-box (if proxy is enabled)
+        if: env.PROXY == 'true'
         run: |
           sudo rm -f /etc/sing-box/config.json
           sudo curl -sSL 'https://github.com/Cat-Ling/ignore/raw/refs/heads/main/config.json' -o /etc/sing-box/config.json
@@ -83,16 +94,19 @@ jobs:
           sleep 2
           sudo ENABLE_DEPRECATED_TUN_ADDRESS_X=true nohup sing-box run -c /etc/sing-box/config.json > sing-box.log 2>&1 &
           curl https://ifconfig.me/ip
+      
       - name: Create Directories
         run: |
           mkdir -p videos
           mkdir -p artifacts
+      
       - name: Install Dependencies
         run: |
           sudo apt-get install -y ffmpeg
           sudo apt-get install -y yt-dlp
           echo used to be sudo pip install --upgrade yt-dlp --break-system-packages
           sudo apt-get install -y aria2
+      
       - name: Download Video
         run: |
           cd videos
@@ -103,12 +117,14 @@ jobs:
           else
             sudo nice -n -20 yt-dlp --concurrent-fragments 10 -o "input_video.%(ext)s" "$VIDEO_LINK"
           fi
+      
       - name: Convert Video with H.264 Compression
         run: |
           cd videos
           VIDEO_TITLE=$(yt-dlp --get-title "$VIDEO_LINK" | sed 's/[^a-zA-Z0-9]/_/g')
           sudo nice -n -20 ffmpeg -thread_queue_size 2048 -i input_video.* -c:v $ENCODER -preset $PRESET -vf fps=$FPS -crf $CRF -max_muxing_queue_size 9999 -c:a aac -threads 4 -bufsize 16M -strict experimental "${VIDEO_TITLE}.mp4"
           rm -rf input_video.*
+      
       - name: Upload to Artifacts
         uses: actions/upload-artifact@v4
         with:
