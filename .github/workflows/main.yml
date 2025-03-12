@@ -13,6 +13,7 @@ on:
         options:
           - none
           - ffmpeg
+          - aria2c
       preset:
         description: 'FFmpeg preset (optional)'
         default: slower
@@ -89,13 +90,16 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get install -y ffmpeg
-          sudo apt install -y yt-dlp
+          sudo apt-get install -y yt-dlp
           echo used to be sudo pip install --upgrade yt-dlp --break-system-packages
+          sudo apt-get install -y aria2
       - name: Download Video
         run: |
           cd videos
           if [ "$DOWNLOADER" == "ffmpeg" ]; then
-            sudo nice -n -20 yt-dlp --downloader ffmpeg --concurrent-fragments 10 -o "input_video.%(ext)s" "$VIDEO_LINK"
+            sudo nice -n -20 yt-dlp --downloader ffmpeg -o "input_video.%(ext)s" "$VIDEO_LINK"
+          elif [ "$DOWNLOADER" == "aria2c" ]; then
+            sudo nice -n -20 yt-dlp --downloader aria2c -o "input_video.%(ext)s" "$VIDEO_LINK"
           else
             sudo nice -n -20 yt-dlp --concurrent-fragments 10 -o "input_video.%(ext)s" "$VIDEO_LINK"
           fi
