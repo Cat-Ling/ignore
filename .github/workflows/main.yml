@@ -56,8 +56,9 @@ jobs:
       ENCODER: ${{ github.event.inputs.encoder }}
       ANAME: ${{ github.event.inputs.aname }}
       ENABLE_DEPRECATED_TUN_ADDRESS_X: true
-      YTDLP_NO_LAZY_EXTRACTORS: true
-      SINGBOX: ${{ secrets.SINGBOX }}
+      ALL_PROXY: http://127.0.0.1:1080
+      HTTP_PROXY: http://127.0.0.1:1080
+      HTTPS_PROXY: http://127.0.0.1:1080
       
 
     steps:
