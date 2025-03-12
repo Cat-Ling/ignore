@@ -53,10 +53,6 @@ on:
         options:
           - true
           - false
-      cookies_gpg:
-        description: 'Encrypted cookies file (optional)'
-        required: false
-        default: ''
 
 jobs:
   process_video:
@@ -77,12 +73,8 @@ jobs:
       ANAME: ${{ github.event.inputs.aname }}
       ENABLE_DEPRECATED_TUN_ADDRESS_X: true
       PROXY: ${{ github.event.inputs.proxy }}
-      COOKIES_GPG: ${{ github.event.inputs.cookies_gpg }}
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
       
+    steps:
       - name: Install Sing-box (if proxy is enabled)
         if: env.PROXY == 'true'
         run: |
@@ -110,33 +102,20 @@ jobs:
       
       - name: Install Dependencies
         run: |
-          sudo apt-get install -y ffmpeg yt-dlp aria2
-      
-      - name: a cookie for you
-        run: |
-          if [ -n "$COOKIES_GPG" ]; then
-            echo "$COOKIES_GPG" | base64 --decode > cookies.gpg
-            gpg --batch --yes --passphrase "$AES_PASSWORD" --output ./cookies.txt --decrypt cookies.gpg
-            echo "Cookies decrypted successfully."
-          else
-            echo "No cookies file provided."
-          fi
-        env:
-          AES_PASSWORD: ${{ secrets.AES_PASSWORD }}
+          sudo apt-get install -y ffmpeg
+          sudo apt-get install -y yt-dlp
+          echo used to be sudo pip install --upgrade yt-dlp --break-system-packages
+          sudo apt-get install -y aria2
       
       - name: Download Video
         run: |
           cd videos
-          COOKIE_OPTION=""
-          if [ -f "../cookies.txt" ]; then
-            COOKIE_OPTION="--cookies ../cookies.txt"
-          fi
           if [ "$DOWNLOADER" == "ffmpeg" ]; then
-            sudo nice -n -20 yt-dlp --downloader ffmpeg -o "input_video.%(ext)s" $COOKIE_OPTION "$VIDEO_LINK"
+            sudo nice -n -20 yt-dlp --downloader ffmpeg -o "input_video.%(ext)s" "$VIDEO_LINK"
           elif [ "$DOWNLOADER" == "aria2c" ]; then
-            sudo nice -n -20 yt-dlp --downloader aria2c -o "input_video.%(ext)s" $COOKIE_OPTION "$VIDEO_LINK"
+            sudo nice -n -20 yt-dlp --downloader aria2c -o "input_video.%(ext)s" "$VIDEO_LINK"
           else
-            sudo nice -n -20 yt-dlp --concurrent-fragments 10 -o "input_video.%(ext)s" $COOKIE_OPTION "$VIDEO_LINK"
+            sudo nice -n -20 yt-dlp --concurrent-fragments 10 -o "input_video.%(ext)s" "$VIDEO_LINK"
           fi
       
       - name: Convert Video with H.264 Compression
