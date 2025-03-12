@@ -57,7 +57,6 @@ jobs:
       ANAME: ${{ github.event.inputs.aname }}
       ENABLE_DEPRECATED_TUN_ADDRESS_X: true
       AES_PASSWORD: ${{ secrets.AES_PASSWORD }}  # AES decryption password from GitHub Secrets
-      
 
     steps:
       - name: sing-box install
@@ -85,10 +84,15 @@ jobs:
           sudo apt-get install -y ffmpeg
           sudo apt install -y yt-dlp
           echo used to be sudo pip install --upgrade yt-dlp --break-system-packages
+      - name: Ensure AES_PASSWORD is 32 bytes
+        run: |
+          # Ensure AES_PASSWORD is 32 bytes (pad or truncate)
+          AES_PASSWORD_PADDED=$(echo -n "${AES_PASSWORD}" | head -c 32)
+          echo "AES_PASSWORD_PADDED=$AES_PASSWORD_PADDED" >> $GITHUB_ENV
       - name: Decrypt Video URL
         run: |
           echo "Decrypting video URL..."
-          echo "${VIDEO_LINK}" | openssl enc -d -aes-256-cbc -base64 -pass pass:${AES_PASSWORD} > decrypted_video_link.txt
+          echo "${VIDEO_LINK}" | openssl enc -d -aes-256-cbc -base64 -pass pass:${AES_PASSWORD_PADDED} > decrypted_video_link.txt
           DECRYPTED_VIDEO_LINK=$(cat decrypted_video_link.txt)
           echo "DECRYPTED_VIDEO_LINK=$DECRYPTED_VIDEO_LINK" >> $GITHUB_ENV
       - name: Download Video
