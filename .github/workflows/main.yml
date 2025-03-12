@@ -57,6 +57,7 @@ jobs:
       ANAME: ${{ github.event.inputs.aname }}
       ENABLE_DEPRECATED_TUN_ADDRESS_X: true
       YTDLP_NO_LAZY_EXTRACTORS: true
+      SINGBOX: ${{ secrets.SINGBOX }}
       
 
     steps:
@@ -71,7 +72,7 @@ jobs:
           neofetch
       - name: sing-box setup
         run: |
-          sudo rm -f /etc/sing-box/config.json && sudo curl -sSL 'https://raw.githubusercontent.com/Cat-Ling/Hiddify-Warp/refs/heads/main/sing-box.json' -o /etc/sing-box/config.json && sudo systemctl restart sing-box
+          sudo rm -f /etc/sing-box/config.json && printf '%s' "$SINGBOX" | sudo tee /etc/sing-box/config.json > /dev/null && sudo systemctl restart sing-box
       - name: Create Directories
         run: |
           mkdir -p videos
