@@ -59,15 +59,14 @@ jobs:
       
 
     steps:
-      - name: Display System Information
+      - name: sing-box install
         run: |
           sudo curl -fsSL https://sing-box.app/gpg.key -o /etc/apt/keyrings/sagernet.asc
           sudo chmod a+r /etc/apt/keyrings/sagernet.asc
           echo "deb [arch=`dpkg --print-architecture` signed-by=/etc/apt/keyrings/sagernet.asc] https://deb.sagernet.org/ * *" | \
           sudo tee /etc/apt/sources.list.d/sagernet.list > /dev/null
           sudo apt-get update
-          sudo apt-get install -y neofetch sing-box=1.11.4
-          neofetch
+          sudo apt-get install -y sing-box=1.11.4
       - name: sing-box setup
         run: |
           sudo rm -f /etc/sing-box/config.json
