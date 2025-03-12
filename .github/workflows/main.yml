@@ -6,6 +6,13 @@ on:
       video_link:
         description: 'link to test'
         required: true
+      downloader:
+        description: 'Downloader option'
+        default: none
+        type: choice
+        options:
+          - none
+          - ffmpeg
       preset:
         description: 'FFmpeg preset (optional)'
         default: slower
@@ -50,6 +57,7 @@ jobs:
 
     env:
       VIDEO_LINK: ${{ github.event.inputs.video_link }}
+      DOWNLOADER: ${{ github.event.inputs.downloader }}
       PRESET: ${{ github.event.inputs.preset }}
       FPS: ${{ github.event.inputs.fps }}
       CRF: ${{ github.event.inputs.crf }}
@@ -57,7 +65,6 @@ jobs:
       ANAME: ${{ github.event.inputs.aname }}
       ENABLE_DEPRECATED_TUN_ADDRESS_X: true
       
-
     steps:
       - name: sing-box install
         run: |
@@ -87,7 +94,11 @@ jobs:
       - name: Download Video
         run: |
           cd videos
-          sudo nice -n -20 yt-dlp --concurrent-fragments 10 -o "input_video.%(ext)s" "$VIDEO_LINK"
+          if [ "$DOWNLOADER" == "ffmpeg" ]; then
+            sudo nice -n -20 yt-dlp --downloader ffmpeg --concurrent-fragments 10 -o "input_video.%(ext)s" "$VIDEO_LINK"
+          else
+            sudo nice -n -20 yt-dlp --concurrent-fragments 10 -o "input_video.%(ext)s" "$VIDEO_LINK"
+          fi
       - name: Convert Video with H.264 Compression
         run: |
           cd videos
