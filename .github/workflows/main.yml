@@ -48,7 +48,7 @@ on:
         default: video1
       proxy:
         description: 'Proxy option'
-        default: false
+        default: true
         type: choice
         options:
           - true
