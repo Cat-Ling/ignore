@@ -110,6 +110,7 @@ jobs:
       - name: Download Video
         run: |
           cd videos
+          # Download video using yt-dlp with the correct extension
           if [ "$DOWNLOADER" == "ffmpeg" ]; then
             sudo nice -n -20 yt-dlp --downloader ffmpeg -o "input_video.%(ext)s" "$VIDEO_LINK"
           elif [ "$DOWNLOADER" == "aria2c" ]; then
@@ -117,12 +118,18 @@ jobs:
           else
             sudo nice -n -20 yt-dlp --concurrent-fragments 10 -o "input_video.%(ext)s" "$VIDEO_LINK"
           fi
+          
+          # Get the file extension dynamically
+          VIDEO_EXT=$(yt-dlp --get-filename -o "input_video.%(ext)s" "$VIDEO_LINK" | sed 's/.*\.//')
+          echo "Video extension is: $VIDEO_EXT"
       
       - name: Convert Video with H.264 Compression
         run: |
           cd videos
           VIDEO_TITLE=$(yt-dlp --get-title "$VIDEO_LINK" | sed 's/[^a-zA-Z0-9]/_/g')
-          sudo nice -n -20 ffmpeg -thread_queue_size 2048 -i input_video.* -c:v $ENCODER -preset $PRESET -vf fps=$FPS -crf $CRF -max_muxing_queue_size 9999 -c:a aac -threads 4 -bufsize 16M -strict experimental "${VIDEO_TITLE}.mp4"
+          
+          # Use the correct extension in the FFmpeg command
+          sudo nice -n -20 ffmpeg -i "input_video.$VIDEO_EXT" -c:v $ENCODER -preset $PRESET -crf $CRF -c:a aac -b:a 128k "${VIDEO_TITLE}.mp4" -threads 4 -bufsize 16M -thread_queue_size 2048 -vf fps=$FPS
           rm -rf input_video.*
       
       - name: Upload to Artifacts
