@@ -118,7 +118,7 @@ jobs:
             sudo nice -n -20 yt-dlp --concurrent-fragments 10 -o "input_video.%(ext)s" "$VIDEO_LINK"
           fi
       
-      - name: Convert Video with H.264 Compression
+      - name: Encoding test
         run: |
           cd videos
           VIDEO_TITLE=$(yt-dlp --get-title "$VIDEO_LINK" | sed 's/[^a-zA-Z0-9]/_/g')
