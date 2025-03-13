@@ -118,17 +118,17 @@ jobs:
             sudo nice -n -20 yt-dlp --concurrent-fragments 10 -o "input_video.%(ext)s" "$VIDEO_LINK"
           fi
           
-      - name: Upload initial file to artifacts for comparison
+      - name: Upload initial file to Artifacts for comparison
         uses: actions/upload-artifact@v4
         with:
           name: original_${{ github.event.inputs.aname }}
           compression-level: 9
           path: videos/*.mp4
           
-      - name: Encoding test
+      - name: Encoding
         run: |
           cd videos
-          VIDEO_TITLE=$(yt-dlp --get-title "$VIDEO_LINK" | sed 's/[^a-zA-Z0-9.-]/_/g'
+          VIDEO_TITLE=$(yt-dlp --get-title "$VIDEO_LINK" | sed 's/[^a-zA-Z0-9.-]/_/g')
           sudo nice -n -20 ffmpeg -i input_video.* -c:v $ENCODER -preset $PRESET -crf $CRF -c:a aac -b:a 128k  -vf fps=$FPS "${VIDEO_TITLE}.mp4" -strict experimental -threads 4 -bufsize 16M -thread_queue_size 2048
           rm -rf input_video.*
       
