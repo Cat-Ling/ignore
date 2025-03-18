@@ -21,7 +21,7 @@ jobs:
           wget -O EvolutionX-15.0-20250302-d2x-10.3-Official.zip https://sourceforge.net/projects/evolution-x/files/d2x/15/EvolutionX-15.0-20250302-d2x-10.3-Official.zip/download
 
       - name: Upload EvolutionX ZIP as Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: EvolutionX-15.0-20250302-d2x-10.3-Official
           path: EvolutionX-15.0-20250302-d2x-10.3-Official.zip
