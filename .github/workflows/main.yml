@@ -47,7 +47,7 @@ on:
         description: 'Name of the artifact zip (optional)'
         default: video1
       proxy:
-        description: 'Proxy option'
+        description: 'Use Proxy'
         default: true
         type: choice
         options:
