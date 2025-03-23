@@ -1,4 +1,4 @@
-name: Build AyuGramDesktop
+name: Build Ayu
 
 on:
   push:
@@ -13,10 +13,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout this repository (Action repo)
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
+
+      - name: Clone AyuGramDesktop repository
+        run: |
+          git clone --recursive https://github.com/AyuGram/AyuGramDesktop.git tdesktop
 
       - name: Prepare libraries
         run: ./tdesktop/Telegram/build/prepare/linux.sh
@@ -25,7 +27,7 @@ jobs:
         run: |
           docker run --rm -it \
             -u $(id -u) \
-            -v "$PWD:/usr/src/tdesktop" \
+            -v "$PWD/tdesktop:/usr/src/tdesktop" \
             ghcr.io/telegramdesktop/tdesktop/centos_env:latest \
             /usr/src/tdesktop/Telegram/build/docker/centos_env/build.sh \
             -D TDESKTOP_API_ID=2040 \
