@@ -1,0 +1,37 @@
+name: Build Ayu
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Prepare libraries
+        run: ./tdesktop/Telegram/build/prepare/linux.sh
+
+      - name: Build project
+        run: |
+          docker run --rm -it \
+            -u $(id -u) \
+            -v "$PWD:/usr/src/tdesktop" \
+            ghcr.io/telegramdesktop/tdesktop/centos_env:latest \
+            /usr/src/tdesktop/Telegram/build/docker/centos_env/build.sh \
+            -D TDESKTOP_API_ID=2040 \
+            -D TDESKTOP_API_HASH=b18441a1ff607e10a989891a5462e627
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: AyuGramDesktop-Build
+          path: tdesktop/out/
