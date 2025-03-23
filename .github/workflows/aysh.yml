@@ -1,4 +1,4 @@
-name: Build Ayu
+name: Build AyuGramDesktop
 
 on:
   push:
@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   build:
