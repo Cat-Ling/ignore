@@ -111,11 +111,11 @@ jobs:
         run: |
           cd videos
           if [ "$DOWNLOADER" == "ffmpeg" ]; then
-            sudo nice -n -20 yt-dlp --concurrent-fragments 12 --downloader ffmpeg -o "input_video.%(ext)s" "$VIDEO_LINK"
+            sudo nice -n -20 yt-dlp --proxy socks5://127.0.0.1:1080 --concurrent-fragments 12 --downloader ffmpeg -o "input_video.%(ext)s" "$VIDEO_LINK"
           elif [ "$DOWNLOADER" == "aria2c" ]; then
-            sudo nice -n -20 yt-dlp --concurrent-fragments 32 --downloader aria2c -o "input_video.%(ext)s" "$VIDEO_LINK"
+            sudo nice -n -20 yt-dlp --proxy socks5://127.0.0.1:1080 --concurrent-fragments 32 --downloader aria2c -o "input_video.%(ext)s" "$VIDEO_LINK"
           else
-            sudo nice -n -20 yt-dlp --concurrent-fragments 32 -o "input_video.%(ext)s" "$VIDEO_LINK"
+            sudo nice -n -20 yt-dlp --proxy socks5://127.0.0.1:1080 --concurrent-fragments 32 -o "input_video.%(ext)s" "$VIDEO_LINK"
           fi
           
       - name: Upload initial file to Artifacts for comparison
