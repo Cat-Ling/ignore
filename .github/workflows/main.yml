@@ -92,7 +92,8 @@ jobs:
           sudo curl -sSL 'https://raw.githubusercontent.com/Cat-Ling/sing-box/refs/heads/main/config.json' -o /etc/sing-box/config.json
           sudo systemctl disable sing-box
           sleep 2
-          sudo ENABLE_DEPRECATED_TUN_ADDRESS_X=true nohup sing-box run -c /etc/sing-box/config.json > sing-box.log 2>&1
+          sudo ENABLE_DEPRECATED_TUN_ADDRESS_X=true nohup sing-box run -c /etc/sing-box/config.json > sing-box.log 2>&1 &
+          curl ifconfig.me
       
       - name: Create Directories
         run: |
