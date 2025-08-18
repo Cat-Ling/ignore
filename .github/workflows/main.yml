@@ -83,17 +83,16 @@ jobs:
           echo "deb [arch=`dpkg --print-architecture` signed-by=/etc/apt/keyrings/sagernet.asc] https://deb.sagernet.org/ * *" | \
           sudo tee /etc/apt/sources.list.d/sagernet.list > /dev/null
           sudo apt-get update
-          sudo apt-get install -y sing-box=1.11.4
+          sudo apt-get install -y sing-box=1.12.1
       
       - name: Setup Sing-box (if proxy is enabled)
         if: env.PROXY == 'true'
         run: |
           sudo rm -f /etc/sing-box/config.json
-          sudo curl -sSL 'https://github.com/Cat-Ling/ignore/raw/refs/heads/main/config.json' -o /etc/sing-box/config.json
+          sudo curl -sSL 'https://raw.githubusercontent.com/Cat-Ling/sing-box/refs/heads/main/config.json' -o /etc/sing-box/config.json
           sudo systemctl disable sing-box
           sleep 2
-          sudo ENABLE_DEPRECATED_TUN_ADDRESS_X=true nohup sing-box run -c /etc/sing-box/config.json > sing-box.log 2>&1 &
-          curl https://ifconfig.me/ip
+          sudo ENABLE_DEPRECATED_TUN_ADDRESS_X=true nohup sing-box run -c /etc/sing-box/config.json > sing-box.log 2>&1
       
       - name: Create Directories
         run: |
