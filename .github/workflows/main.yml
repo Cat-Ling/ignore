@@ -73,6 +73,7 @@ jobs:
       ANAME: ${{ github.event.inputs.aname }}
       ENABLE_DEPRECATED_TUN_ADDRESS_X: true
       PROXY: ${{ github.event.inputs.proxy }}
+      PASSWORD: ${{ secrets.PASSWORD }}
       
     steps:
       - name: Install Sing-box (if proxy is enabled)
