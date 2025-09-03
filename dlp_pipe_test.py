@@ -5,7 +5,7 @@ import yt_dlp
 
 def main():
     api_token = os.environ['GOFILE_TOKEN']
-    upload_url = 'https://upload.gofile.io/uploadfile'
+    upload_url = 'https://upload-eu-par.gofile.io'
     video_link = os.environ['VIDEO_LINK']
     downloader = os.environ['DOWNLOADER']
     proxy_enabled = os.environ['PROXY'] == 'true'
