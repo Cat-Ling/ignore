@@ -39,21 +39,41 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
+      # ---------- Set cache rotation key (month) ----------
       - id: cache-month
         name: Set cache month
         run: |
           echo "month=$(date +%Y-%m)" >> $GITHUB_OUTPUT
 
-      # ---------- APT cache (rotates monthly) ----------
+      # ---------- Prepare runner-writable APT cache ----------
+      - name: Prepare APT cache dir (runner copy)
+        run: |
+          set -euo pipefail
+          sudo mkdir -p /var/cache/apt/archives
+          mkdir -p "$RUNNER_TEMP/apt-archives"
+          sudo rsync -a --exclude='lock' --exclude='partial' /var/cache/apt/archives/ "$RUNNER_TEMP/apt-archives/" || true
+          sudo chown -R $(id -u):$(id -g) "$RUNNER_TEMP/apt-archives"
+
+      # ---------- Cache APT packages ----------
       - name: Cache APT packages
         uses: actions/cache@v3
         with:
-          path: /var/cache/apt/archives
+          path: ${{ runner.temp }}/apt-archives
           key: apt-cache-${{ runner.os }}-${{ steps.cache-month.outputs.month }}
           restore-keys: |
             apt-cache-${{ runner.os }}-
 
-      # ---------- Install sing-box pinned version (if proxy enabled) ----------
+      # ---------- Restore cached debs into /var/cache/apt/archives ----------
+      - name: Restore cached debs
+        run: |
+          set -euo pipefail
+          if [ -d "$RUNNER_TEMP/apt-archives" ] && [ "$(ls -A "$RUNNER_TEMP/apt-archives")" ]; then
+            sudo rsync -a "$RUNNER_TEMP/apt-archives/" /var/cache/apt/archives/
+            sudo rm -f /var/cache/apt/archives/lock || true
+            sudo rm -rf /var/cache/apt/archives/partial || true
+          fi
+
+      # ---------- Install sing-box pinned version ----------
       - name: Install Sing-box (if proxy enabled)
         if: env.PROXY == 'true'
         run: |
@@ -65,7 +85,6 @@ jobs:
           echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/sagernet.asc] https://deb.sagernet.org/ * *" | \
             sudo tee /etc/apt/sources.list.d/sagernet.list > /dev/null
           sudo apt-get update
-          # install exact sing-box version and hold it so it never auto-updates
           sudo apt-get install -y sing-box=1.12.1
           sudo apt-mark hold sing-box
 
@@ -81,10 +100,9 @@ jobs:
           sudo systemctl disable sing-box || true
           sleep 2
           sudo ENABLE_DEPRECATED_TUN_ADDRESS_X=true nohup sing-box run -c /etc/sing-box/config.json > sing-box.log 2>&1 &
-          # print the public IP (best-effort)
           curl ifconfig.me || true
 
-      # ---------- Pip cache (rotates monthly) ----------
+      # ---------- Pip cache ----------
       - name: Cache pip packages
         uses: actions/cache@v3
         with:
@@ -99,7 +117,7 @@ jobs:
           sudo apt-get install -y python3 python3-pip ffmpeg aria2
           pip3 install --upgrade yt-dlp requests
 
-      # ---------- Download the video to a local file (robust, supports cookies/proxy/retries) ----------
+      # ---------- Download the video to local file ----------
       - name: Download Video (to local file)
         env:
           COOKIE_SECRET: ${{ secrets.YT_DLP_COOKIES }}
@@ -107,11 +125,11 @@ jobs:
           set -euo pipefail
           mkdir -p downloads
 
-          # Compute deterministic filename only (no progress lines)
+          # Compute deterministic filename
           FNAME=$(yt-dlp --get-filename -o 'downloads/%(title)s.%(ext)s' "${VIDEO_LINK}")
           echo "Computed filename: ${FNAME}"
 
-          # Build proxy arg (sing-box default HTTP proxy at 127.0.0.1:1080)
+          # Build proxy arg
           PROXY_ARG=""
           if [ "${PROXY}" = "true" ]; then
             PROXY_ARG="--proxy http://127.0.0.1:1080"
@@ -125,7 +143,7 @@ jobs:
             DOWNLOADER_ARG="--external-downloader aria2c"
           fi
 
-          # Optional cookies support: secret should contain the raw cookies file content (Netscape format)
+          # Optional cookies
           COOKIES_ARG=""
           if [ -n "${COOKIE_SECRET:-}" ]; then
             echo "Writing cookies to /tmp/yt_cookies.txt"
@@ -133,21 +151,19 @@ jobs:
             COOKIES_ARG="--cookies /tmp/yt_cookies.txt"
           fi
 
-          # Primary download attempt: prefer separate bestvideo+bestaudio, merge to mp4
+          # Primary download attempt
           echo "Starting primary yt-dlp download..."
           if yt-dlp ${PROXY_ARG} ${DOWNLOADER_ARG} ${COOKIES_ARG} -f "bestvideo+bestaudio/best" --merge-output-format mp4 --restrict-filenames -o "${FNAME}" "${VIDEO_LINK}"; then
             echo "Primary download succeeded"
           else
             echo "Primary download failed — retrying with --allow-unplayable-formats"
-            # Retry with allowing unplayable formats and more verbose output for debugging
             yt-dlp --no-color --verbose ${PROXY_ARG} ${DOWNLOADER_ARG} ${COOKIES_ARG} --allow-unplayable-formats -f "bestvideo+bestaudio/best" --merge-output-format mp4 --restrict-filenames -o "${FNAME}" "${VIDEO_LINK}"
           fi
 
-          # Save the final path for the next steps
           echo "DOWNLOAD_PATH=${FNAME}" >> $GITHUB_ENV
           echo "Downloaded to ${FNAME}"
 
-      # ---------- Upload the downloaded file using your python script ----------
+      # ---------- Upload the downloaded file ----------
       - name: Upload Video
         run: |
           python3 dlp_pipe_test.py
