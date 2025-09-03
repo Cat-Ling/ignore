@@ -31,48 +31,123 @@ jobs:
       DOWNLOADER: ${{ github.event.inputs.downloader }}
       PROXY: ${{ github.event.inputs.proxy }}
       GOFILE_TOKEN: ${{ secrets.GOFILE_TOKEN }}
+      PASSWORD: ${{ secrets.PASSWORD }}
+      # Optional secret: store your yt-dlp cookies (Netscape format). Leave empty if not used.
+      YT_DLP_COOKIES: ${{ secrets.YT_DLP_COOKIES }}
 
     steps:
-      - name: Checkout Repo
+      - name: Checkout repo
         uses: actions/checkout@v3
 
+      - id: cache-month
+        name: Set cache month
+        run: |
+          echo "month=$(date +%Y-%m)" >> $GITHUB_OUTPUT
+
+      # ---------- APT cache (rotates monthly) ----------
+      - name: Cache APT packages
+        uses: actions/cache@v3
+        with:
+          path: /var/cache/apt/archives
+          key: apt-cache-${{ runner.os }}-${{ steps.cache-month.outputs.month }}
+          restore-keys: |
+            apt-cache-${{ runner.os }}-
+
+      # ---------- Install sing-box pinned version (if proxy enabled) ----------
       - name: Install Sing-box (if proxy enabled)
         if: env.PROXY == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y unzip curl
+          sudo mkdir -p /etc/apt/keyrings
           sudo curl -fsSL https://sing-box.app/gpg.key -o /etc/apt/keyrings/sagernet.asc
           sudo chmod a+r /etc/apt/keyrings/sagernet.asc
           echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/sagernet.asc] https://deb.sagernet.org/ * *" | \
-          sudo tee /etc/apt/sources.list.d/sagernet.list > /dev/null
+            sudo tee /etc/apt/sources.list.d/sagernet.list > /dev/null
           sudo apt-get update
+          # install exact sing-box version and hold it so it never auto-updates
           sudo apt-get install -y sing-box=1.12.1
+          sudo apt-mark hold sing-box
 
       - name: Setup Sing-box (if proxy enabled)
         if: env.PROXY == 'true'
         run: |
-          sudo rm -f /etc/sing-box/config.json
+          sudo rm -f /etc/sing-box/config.json || true
+          sudo mkdir -p /etc/sing-box
           sudo cp create.sh /etc/sing-box/
           cd /etc/sing-box
           sudo chmod +x create.sh
           sudo ./create.sh
-          sudo systemctl disable sing-box
+          sudo systemctl disable sing-box || true
           sleep 2
           sudo ENABLE_DEPRECATED_TUN_ADDRESS_X=true nohup sing-box run -c /etc/sing-box/config.json > sing-box.log 2>&1 &
-          curl ifconfig.me
+          # print the public IP (best-effort)
+          curl ifconfig.me || true
 
-      - name: Install Dependencies
+      # ---------- Pip cache (rotates monthly) ----------
+      - name: Cache pip packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: pip-cache-${{ runner.os }}-${{ steps.cache-month.outputs.month }}
+          restore-keys: |
+            pip-cache-${{ runner.os }}-
+
+      - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y python3 python3-pip ffmpeg aria2
           pip3 install --upgrade yt-dlp requests
 
-      - name: Download Video
+      # ---------- Download the video to a local file (robust, supports cookies/proxy/retries) ----------
+      - name: Download Video (to local file)
+        env:
+          COOKIE_SECRET: ${{ secrets.YT_DLP_COOKIES }}
         run: |
+          set -euo pipefail
           mkdir -p downloads
-          DOWNLOAD_PATH=$(yt-dlp -f best --restrict-filenames -o 'downloads/%(title)s.%(ext)s' "${VIDEO_LINK}")
-          echo "DOWNLOAD_PATH=$DOWNLOAD_PATH" >> $GITHUB_ENV
 
+          # Compute deterministic filename only (no progress lines)
+          FNAME=$(yt-dlp --get-filename -o 'downloads/%(title)s.%(ext)s' "${VIDEO_LINK}")
+          echo "Computed filename: ${FNAME}"
+
+          # Build proxy arg (sing-box default HTTP proxy at 127.0.0.1:1080)
+          PROXY_ARG=""
+          if [ "${PROXY}" = "true" ]; then
+            PROXY_ARG="--proxy http://127.0.0.1:1080"
+          fi
+
+          # External downloader option
+          DOWNLOADER_ARG=""
+          if [ "${DOWNLOADER}" = "ffmpeg" ]; then
+            DOWNLOADER_ARG="--external-downloader ffmpeg"
+          elif [ "${DOWNLOADER}" = "aria2c" ]; then
+            DOWNLOADER_ARG="--external-downloader aria2c"
+          fi
+
+          # Optional cookies support: secret should contain the raw cookies file content (Netscape format)
+          COOKIES_ARG=""
+          if [ -n "${COOKIE_SECRET:-}" ]; then
+            echo "Writing cookies to /tmp/yt_cookies.txt"
+            printf '%s' "${COOKIE_SECRET}" > /tmp/yt_cookies.txt
+            COOKIES_ARG="--cookies /tmp/yt_cookies.txt"
+          fi
+
+          # Primary download attempt: prefer separate bestvideo+bestaudio, merge to mp4
+          echo "Starting primary yt-dlp download..."
+          if yt-dlp ${PROXY_ARG} ${DOWNLOADER_ARG} ${COOKIES_ARG} -f "bestvideo+bestaudio/best" --merge-output-format mp4 --restrict-filenames -o "${FNAME}" "${VIDEO_LINK}"; then
+            echo "Primary download succeeded"
+          else
+            echo "Primary download failed — retrying with --allow-unplayable-formats"
+            # Retry with allowing unplayable formats and more verbose output for debugging
+            yt-dlp --no-color --verbose ${PROXY_ARG} ${DOWNLOADER_ARG} ${COOKIES_ARG} --allow-unplayable-formats -f "bestvideo+bestaudio/best" --merge-output-format mp4 --restrict-filenames -o "${FNAME}" "${VIDEO_LINK}"
+          fi
+
+          # Save the final path for the next steps
+          echo "DOWNLOAD_PATH=${FNAME}" >> $GITHUB_ENV
+          echo "Downloaded to ${FNAME}"
+
+      # ---------- Upload the downloaded file using your python script ----------
       - name: Upload Video
         run: |
           python3 dlp_pipe_test.py
