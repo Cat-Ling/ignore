@@ -32,7 +32,6 @@ jobs:
       PROXY: ${{ github.event.inputs.proxy }}
       GOFILE_TOKEN: ${{ secrets.GOFILE_TOKEN }}
       PASSWORD: ${{ secrets.PASSWORD }}
-      # Optional secret: store your yt-dlp cookies (Netscape format). Leave empty if not used.
       YT_DLP_COOKIES: ${{ secrets.YT_DLP_COOKIES }}
 
     steps:
@@ -98,8 +97,21 @@ jobs:
           sudo chmod +x create.sh
           sudo ./create.sh
           sudo systemctl disable sing-box || true
-          sleep 2
-          sudo ENABLE_DEPRECATED_TUN_ADDRESS_X=true nohup sing-box run -c /etc/sing-box/config.json > sing-box.log 2>&1 &
+
+          # Launch sing-box with proper root log redirection
+          sudo bash -c "ENABLE_DEPRECATED_TUN_ADDRESS_X=true nohup sing-box run -c /etc/sing-box/config.json > /etc/sing-box/sing-box.log 2>&1 &"
+
+          # Wait until proxy port 1080 is ready
+          timeout=30
+          while ! nc -z 127.0.0.1 1080; do
+              sleep 1
+              timeout=$((timeout - 1))
+              if [ $timeout -le 0 ]; then
+                  echo "Timeout waiting for sing-box proxy"
+                  exit 1
+              fi
+          done
+          echo "Sing-box proxy is ready"
           curl ifconfig.me || true
 
       # ---------- Pip cache ----------
@@ -125,17 +137,14 @@ jobs:
           set -euo pipefail
           mkdir -p downloads
 
-          # Compute deterministic filename
           FNAME=$(yt-dlp --get-filename -o 'downloads/%(title)s.%(ext)s' "${VIDEO_LINK}")
           echo "Computed filename: ${FNAME}"
 
-          # Build proxy arg
           PROXY_ARG=""
           if [ "${PROXY}" = "true" ]; then
             PROXY_ARG="--proxy http://127.0.0.1:1080"
           fi
 
-          # External downloader option
           DOWNLOADER_ARG=""
           if [ "${DOWNLOADER}" = "ffmpeg" ]; then
             DOWNLOADER_ARG="--external-downloader ffmpeg"
@@ -143,7 +152,6 @@ jobs:
             DOWNLOADER_ARG="--external-downloader aria2c"
           fi
 
-          # Optional cookies
           COOKIES_ARG=""
           if [ -n "${COOKIE_SECRET:-}" ]; then
             echo "Writing cookies to /tmp/yt_cookies.txt"
@@ -151,13 +159,12 @@ jobs:
             COOKIES_ARG="--cookies /tmp/yt_cookies.txt"
           fi
 
-          # Primary download attempt
-          echo "Starting primary yt-dlp download..."
+          # Primary download
           if yt-dlp ${PROXY_ARG} ${DOWNLOADER_ARG} ${COOKIES_ARG} -f "bestvideo+bestaudio/best" --merge-output-format mp4 --restrict-filenames -o "${FNAME}" "${VIDEO_LINK}"; then
-            echo "Primary download succeeded"
+              echo "Primary download succeeded"
           else
-            echo "Primary download failed — retrying with --allow-unplayable-formats"
-            yt-dlp --no-color --verbose ${PROXY_ARG} ${DOWNLOADER_ARG} ${COOKIES_ARG} --allow-unplayable-formats -f "bestvideo+bestaudio/best" --merge-output-format mp4 --restrict-filenames -o "${FNAME}" "${VIDEO_LINK}"
+              echo "Retrying with --allow-unplayable-formats"
+              yt-dlp --no-color --verbose ${PROXY_ARG} ${DOWNLOADER_ARG} ${COOKIES_ARG} --allow-unplayable-formats -f "bestvideo+bestaudio/best" --merge-output-format mp4 --restrict-filenames -o "${FNAME}" "${VIDEO_LINK}"
           fi
 
           echo "DOWNLOAD_PATH=${FNAME}" >> $GITHUB_ENV
